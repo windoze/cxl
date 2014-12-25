@@ -9,7 +9,7 @@
 #include <tuple>
 #include <functional>
 
-namespace utility
+namespace cxutil
 {
 template <typename T>
 using unref = std::remove_reference_t<T>;
@@ -233,6 +233,6 @@ typename std::decay<T>::type decay_copy(T&& t)
     return std::forward<T>(t);
 }
 
-} // End of namespace utility
+} // End of namespace cxutil
 
 #endif // CXUTIL_TRAITS_HPP

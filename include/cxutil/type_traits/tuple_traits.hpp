@@ -6,7 +6,7 @@
 #include <tuple>
 #include <cxutil/type_traits/function_traits.hpp>
 
-namespace utility
+namespace cxutil
 {
 namespace detail
 {
@@ -27,7 +27,7 @@ namespace detail
     {
         static constexpr bool value = false;
     };
-} // End of namespace utility::detail
+} // End of namespace cxutil::detail
 
 template <typename T>
 struct dedup;
@@ -64,5 +64,5 @@ struct dedup<std::tuple<T, Types...>>
                                       std::tuple<T, Types...>>::type type;
 };
 
-} // End of namespace utility
+} // End of namespace cxutil
 #endif // CXUTIL_TUPLE_TRAITS_HPP

@@ -7,7 +7,7 @@
 #include <tuple>
 #include <type_traits>
 
-namespace utility
+namespace cxutil
 {
 // make_tuple_indices
 template <std::size_t...>
@@ -30,7 +30,7 @@ namespace detail
     {
         typedef tuple_indices<Indices...> type;
     };
-} // End or namespace utility::detail
+} // End or namespace cxutil::detail
 
 template <std::size_t Ep, std::size_t Sp = 0>
 struct make_tuple_indices
@@ -124,7 +124,7 @@ namespace detail
     {
         using type = R(A...);
     };
-}   // End of namespace utility::detail
+}   // End of namespace cxutil::detail
 template <typename T>
 using get_signature = typename detail::get_signature_impl<T>::type;
 
@@ -235,5 +235,5 @@ struct function_traits<R (C::*)(A...) const volatile>
         typedef typename std::tuple_element<N, arguments_tuple>::type type;
     };
 };
-}   // End of namespace utility
+}   // End of namespace cxutil
 #endif  // CXUTIL_FUNCTION_TRAITS_HPP

@@ -11,7 +11,7 @@
 #include <cxutil/type_traits.hpp>
 #include <cxutil/variant/recursive_wrapper.hpp>
 
-namespace utility
+namespace cxutil
 {
 
 #pragma clang diagnostic push
@@ -486,5 +486,5 @@ namespace detail
     struct contained_t<T, variant<Types...>> : contained_t<T, Types...>
     {
     };
-}   // End of namespace utility::detail
-}   // End of namespace utility
+}   // End of namespace cxutil::detail
+}   // End of namespace cxutil

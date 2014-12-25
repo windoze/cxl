@@ -1,8 +1,9 @@
 #pragma once
 
 #include <ostream>
+#include <cxutil/variant/variant.hpp>
 
-namespace utility
+namespace cxutil
 {
 
 namespace detail
@@ -18,7 +19,7 @@ namespace detail
 
         std::ostream& out;
     };
-}   // End of namespace utility::detail
+}   // End of namespace cxutil::detail
 
 template <typename First, typename... Rest>
 std::ostream&
@@ -28,4 +29,4 @@ operator<<(std::ostream& out,
     detail::printer const printer_{out};
     return v.apply_visitor(printer_);
 }
-}   // End of namespace utility
+}   // End of namespace cxutil

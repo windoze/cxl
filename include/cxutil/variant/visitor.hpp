@@ -5,7 +5,7 @@
 
 #include <utility>
 
-namespace utility
+namespace cxutil
 {
 
 namespace detail
@@ -90,7 +90,7 @@ namespace detail
             return base::operator()(subvisitor_, std::forward<Rest>(rest)...);
         }
     };
-}   // End of namespace utility::detail
+}   // End of namespace cxutil::detail
 
 template <typename Visitor, typename First, typename... Rest>
 decltype(auto) apply_visitor(Visitor&& visitor, First&& first, Rest&&... rest)
@@ -145,11 +145,11 @@ namespace detail
     private:
         Visitor visitor_;
     };
-}   // End of namespace utility::detail
+}   // End of namespace cxutil::detail
 
 template <typename Visitor>
 constexpr detail::delayed_visitor_applier<Visitor> apply_visitor(Visitor&& visitor) noexcept
 {
     return std::forward<Visitor>(visitor);
 }
-}   // End of namespace utility
+}   // End of namespace cxutil

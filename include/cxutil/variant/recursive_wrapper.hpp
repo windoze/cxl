@@ -4,7 +4,7 @@
 #include <utility>
 #include <cxutil/type_traits.hpp>
 
-namespace utility
+namespace cxutil
 {
 
 template <typename WrappedType>
@@ -107,7 +107,7 @@ namespace detail
             return static_cast<type>(std::forward<Model>(value).get());
         }
     };
-}   // End of namespace utility::detail
+}   // End of namespace cxutil::detail
 
 template <typename Wrapped>
 using unwrap_type = typename detail::unwrap_type<unrefcv<Wrapped>, Wrapped>::type;
@@ -124,4 +124,4 @@ void swap(recursive_wrapper<WrappedType>& lhs, recursive_wrapper<WrappedType>& r
 {
     lhs.swap(rhs);
 }
-}   // End of namespace utility
+}   // End of namespace cxutil
