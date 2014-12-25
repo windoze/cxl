@@ -1,13 +1,11 @@
+#ifndef CXUTIL_VARIANT_VARIANT_HPP
+#define CXUTIL_VARIANT_VARIANT_HPP
+
 #pragma once
 
 #include <stdexcept>
-#include <memory>
-#include <utility>
-#include <type_traits>
 #include <typeinfo>
 #include <algorithm>
-#include <functional>
-#include <cstdlib>
 #include <cxutil/type_traits.hpp>
 #include <cxutil/variant/recursive_wrapper.hpp>
 
@@ -78,7 +76,6 @@ private:
 
     struct destroyer
     {
-
         template <typename T>
         void operator()(T& value) const
         {
@@ -99,7 +96,7 @@ private:
     template <typename... Args>
     void construct(Args&&... args)
     {
-        constexpr size_type which = which_is_constructible < Args && ... > ::value;
+        constexpr size_type which = which_is_constructible <Args&&...> ::value;
         static_assert((which != npos),
                       "no one type can be constructed from specified parameter pack");
         // -Wconversion warning here means, that construction or assignment may imply undesirable
@@ -110,7 +107,6 @@ private:
 
     struct constructor
     {
-
         template <typename R>
         void operator()(R&& rhs) const
         {
@@ -122,22 +118,21 @@ private:
 
     struct assigner
     {
-
         template <typename L, typename R>
-        enable_if<is_constructible<L, R>> reconstruct(R&& rhs) const noexcept
+        enable_if<std::is_constructible<L, R>::value> reconstruct(R&& rhs) const noexcept
         {
             variant backup_(std::forward<R>(rhs));
             lhs_.swap(backup_);
         }
 
         template <typename L, typename R>
-        enable_if<!is_constructible<L, R>> reconstruct(R&&) const
+        enable_if<!std::is_constructible<L, R>::value> reconstruct(R&&) const
         {
             throw bad_get("assigner: lhs is not constructible from rhs");
         }
 
         template <typename L, typename R>
-        enable_if<is_assignable<L, R>> reassign(R&& rhs) const
+        enable_if<std::is_assignable<L, R>::value> reassign(R&& rhs) const
         {
             // -Wconversion warning here means, that assignment may imply undesirable type
             // conversion
@@ -145,7 +140,7 @@ private:
         }
 
         template <typename L, typename R>
-        enable_if<!is_assignable<L, R>> reassign(R&& rhs) const
+        enable_if<!std::is_assignable<L, R>::value> reassign(R&& rhs) const
         {
             reconstruct<L>(std::forward<R>(rhs));
         }
@@ -154,7 +149,7 @@ private:
         enable_if<is_this_type<unrefcv<R>>::value> operator()(R&& rhs) const
         {
             using lhs = unrefcv<R>;
-            static_assert((is_assignable<lhs, R> || is_constructible<lhs, R>),
+            static_assert((std::is_assignable<lhs, R>::value || std::is_constructible<lhs, R>::value),
                           "type selected, but it cannot be assigned");
             if (lhs_.which() == which_type<lhs>::value) {
                 reassign<lhs>(std::forward<R>(rhs));
@@ -202,7 +197,6 @@ private:
 
     struct reflect
     {
-
         template <typename T>
         std::type_info const& operator()(T const&) const
         {
@@ -227,7 +221,7 @@ public:
     template <typename Visitor, typename... Args>
     decltype(auto) apply_visitor(Visitor&& visitor, Args&&... args) const &
     {
-        static_assert(is_same<result_of<Visitor&&, unwrap_type<Types> const&, Args&&...>...>,
+        static_assert(detail::is_same<result_of<Visitor&&, unwrap_type<Types> const&, Args&&...>...>::value,
                       "non-identical return types in visitor");
         using result_type = result_of<Visitor&&, type<0> const&, Args&&...>;
         using caller_type
@@ -237,7 +231,7 @@ public:
                storage_type const&,
                Visitor &&,
                Types const&,
-               Args && ... > ...};
+               Args&&...> ...};
         return dispatcher_[which_](
             *storage_, std::forward<Visitor>(visitor), std::forward<Args>(args)...);
     }
@@ -252,7 +246,7 @@ public:
         using caller_type
             = result_type (*)(storage_type& storage, Visitor&& visitor, Args&&... args);
         static constexpr caller_type dispatcher_[sizeof...(Types)] = {
-            &variant::caller < result_type, storage_type&, Visitor &&, Types&, Args && ... > ...};
+            &variant::caller < result_type, storage_type&, Visitor &&, Types&, Args&&...> ...};
         return dispatcher_[which_](
             *storage_, std::forward<Visitor>(visitor), std::forward<Args>(args)...);
     }
@@ -260,7 +254,7 @@ public:
     template <typename Visitor, typename... Args>
     decltype(auto) apply_visitor(Visitor&& visitor, Args&&... args) &&
     {
-        static_assert(is_same<result_of<Visitor&&, unwrap_type<Types>&&, Args&&...>...>,
+        static_assert(detail::is_same<result_of<Visitor&&, unwrap_type<Types>&&, Args&&...>...>::value,
                       "non-identical return types in visitor");
         using result_type = result_of<Visitor&&, type<0>&&, Args&&...>;
         using caller_type
@@ -270,7 +264,7 @@ public:
                storage_type &&,
                Visitor &&,
                Types &&,
-               Args && ... > ...};
+               Args&&...> ...};
         return dispatcher_[which_](
             std::move(*storage_), std::forward<Visitor>(visitor), std::forward<Args>(args)...);
     }
@@ -488,3 +482,5 @@ namespace detail
     };
 }   // End of namespace cxutil::detail
 }   // End of namespace cxutil
+
+#endif  // CXUTIL_VARIANT_VARIANT_HPP

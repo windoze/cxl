@@ -1,3 +1,6 @@
+#ifndef CXUTIL_VARIANT_VISITOR_HPP
+#define CXUTIL_VARIANT_VISITOR_HPP
+
 #pragma once
 
 #include <cxutil/type_traits.hpp>
@@ -7,10 +10,8 @@
 
 namespace cxutil
 {
-
 namespace detail
 {
-
     template <typename T, bool = is_variant<unrefcv<T>>::value>
     struct underlying_type;
 
@@ -35,7 +36,6 @@ namespace detail
     template <typename Ret, typename Supervisitor, typename Visitable>
     struct subvisitor<Ret, Supervisitor, Visitable, true>
     { // visitation
-
         template <typename... Visited>
         Ret operator()(Visited&&... visited) const
         {
@@ -68,7 +68,6 @@ namespace detail
     template <typename Ret>
     struct visitor_partially_applier<Ret>
     { // backward
-
         template <typename Visitor>
         Ret operator()(Visitor&& visitor) const
         {
@@ -79,7 +78,6 @@ namespace detail
     template <typename Ret, typename First, typename... Rest>
     struct visitor_partially_applier<Ret, First, Rest...> : visitor_partially_applier<Ret, Rest...>
     { // forward
-
         using base = visitor_partially_applier<Ret, Rest...> const;
 
         template <typename Visitor>
@@ -105,11 +103,9 @@ decltype(auto) apply_visitor(Visitor&& visitor, First&& first, Rest&&... rest)
 
 namespace detail
 {
-
     template <typename Visitor>
     struct delayed_visitor_applier
     {
-
         static_assert(!is_rref<Visitor>, "xx");
 
         constexpr delayed_visitor_applier(Visitor&& visitor) noexcept
@@ -153,3 +149,5 @@ constexpr detail::delayed_visitor_applier<Visitor> apply_visitor(Visitor&& visit
     return std::forward<Visitor>(visitor);
 }
 }   // End of namespace cxutil
+
+#endif  // CXUTIL_VARIANT_VISITOR_HPP

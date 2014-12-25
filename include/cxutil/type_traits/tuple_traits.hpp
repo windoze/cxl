@@ -4,10 +4,42 @@
 #pragma once
 
 #include <tuple>
-#include <cxutil/type_traits/function_traits.hpp>
 
 namespace cxutil
 {
+template <typename T>
+struct tuple_head;
+
+template <typename T, typename... Types>
+struct tuple_head<std::tuple<T, Types...>>
+{
+    typedef T type;
+};
+
+template <typename T>
+struct tuple_tail;
+
+template <typename T, typename... Types>
+struct tuple_tail<std::tuple<T, Types...>>
+{
+    typedef std::tuple<Types...> type;
+};
+
+template <typename T>
+struct tuple_empty;
+
+template <typename... Types>
+struct tuple_empty<std::tuple<Types...>>
+{
+    static constexpr bool value = false;
+};
+
+template <>
+struct tuple_empty<std::tuple<>>
+{
+    static constexpr bool value = true;
+};
+
 namespace detail
 {
     template <typename T, typename Tp>

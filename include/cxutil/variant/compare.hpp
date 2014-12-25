@@ -1,3 +1,6 @@
+#ifndef CXUTIL_VARIANT_COMPARE_HPP
+#define CXUTIL_VARIANT_COMPARE_HPP
+
 #pragma once
 
 #include <cxutil/variant/variant.hpp>
@@ -38,7 +41,6 @@ namespace detail
     template <typename VariantType>
     struct less_than_comparator
     {
-
         template <typename T>
         bool operator()(T const& lhs, T const& rhs) const
         {
@@ -60,3 +62,5 @@ bool operator<(variant<Types...> const& lhs, variant<Types...> const& rhs)
     return apply_visitor(less_than_comparator, lhs, rhs);
 }
 }   // End of namespace cxutil
+
+#endif  // CXUTIL_VARIANT_COMPARE_HPP

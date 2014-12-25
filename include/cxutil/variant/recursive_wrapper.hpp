@@ -1,3 +1,6 @@
+#ifndef CXUTIL_VARIANT_RECURSIVE_WRAPPER_HPP
+#define CXUTIL_VARIANT_RECURSIVE_WRAPPER_HPP
+
 #pragma once
 
 #include <memory>
@@ -22,7 +25,6 @@ struct recursive_wrapper final
     recursive_wrapper(First&& first, Rest&&... rest)
     : storage_(std::make_unique<type>(std::forward<First>(first), std::forward<Rest>(rest)...))
     {
-        ;
     }
 
     recursive_wrapper() : storage_(std::make_unique<type>()) { ; }
@@ -33,7 +35,6 @@ struct recursive_wrapper final
 
     recursive_wrapper(recursive_wrapper&& rhs) noexcept : recursive_wrapper(std::move(rhs).get())
     {
-        ;
     }
 
     recursive_wrapper& operator=(recursive_wrapper const& rhs) { get() = rhs.get(); }
@@ -125,3 +126,5 @@ void swap(recursive_wrapper<WrappedType>& lhs, recursive_wrapper<WrappedType>& r
     lhs.swap(rhs);
 }
 }   // End of namespace cxutil
+
+#endif  // CXUTIL_VARIANT_RECURSIVE_WRAPPER_HPP
