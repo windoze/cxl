@@ -14,6 +14,11 @@ namespace cxutil
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wweak-vtables"
+/**
+ * @brief The bad_get struct
+ *
+ * Exception class, thrown when getting specific type from a variant contains other types
+ */
 struct bad_get : std::runtime_error
 {
     explicit bad_get(const char* what) : std::runtime_error(what) { ; }
@@ -96,7 +101,7 @@ private:
     template <typename... Args>
     void construct(Args&&... args)
     {
-        constexpr size_type which = which_is_constructible <Args&&...> ::value;
+        constexpr size_type which = which_is_constructible < Args && ... > ::value;
         static_assert((which != npos),
                       "no one type can be constructed from specified parameter pack");
         // -Wconversion warning here means, that construction or assignment may imply undesirable
@@ -121,8 +126,8 @@ private:
         template <typename L, typename R>
         enable_if<std::is_constructible<L, R>::value> reconstruct(R&& rhs) const noexcept
         {
-            variant backup_(std::forward<R>(rhs));
-            lhs_.swap(backup_);
+            variant backup(std::forward<R>(rhs));
+            lhs_.swap(backup);
         }
 
         template <typename L, typename R>
@@ -149,8 +154,9 @@ private:
         enable_if<is_this_type<unrefcv<R>>::value> operator()(R&& rhs) const
         {
             using lhs = unrefcv<R>;
-            static_assert((std::is_assignable<lhs, R>::value || std::is_constructible<lhs, R>::value),
-                          "type selected, but it cannot be assigned");
+            static_assert(
+                (std::is_assignable<lhs, R>::value || std::is_constructible<lhs, R>::value),
+                "type selected, but it cannot be assigned");
             if (lhs_.which() == which_type<lhs>::value) {
                 reassign<lhs>(std::forward<R>(rhs));
             } else {
@@ -161,8 +167,8 @@ private:
         template <typename R>
         enable_if<is_there_constructible<R&&>::value> construct(R&& rhs) const noexcept
         {
-            variant backup_(std::forward<R>(rhs));
-            lhs_.swap(backup_);
+            variant backup(std::forward<R>(rhs));
+            lhs_.swap(backup);
         }
 
         template <typename R>
@@ -221,18 +227,18 @@ public:
     template <typename Visitor, typename... Args>
     decltype(auto) apply_visitor(Visitor&& visitor, Args&&... args) const &
     {
-        static_assert(detail::is_same<result_of<Visitor&&, unwrap_type<Types> const&, Args&&...>...>::value,
-                      "non-identical return types in visitor");
+        static_assert(
+            detail::is_same<result_of<Visitor&&, unwrap_type<Types> const&, Args&&...>...>::value,
+            "non-identical return types in visitor");
         using result_type = result_of<Visitor&&, type<0> const&, Args&&...>;
         using caller_type
             = result_type (*)(storage_type const& storage, Visitor&& visitor, Args&&... args);
-        static constexpr caller_type dispatcher_[sizeof...(Types)]
-            = {&variant::caller < result_type,
-               storage_type const&,
-               Visitor &&,
-               Types const&,
-               Args&&...> ...};
-        return dispatcher_[which_](
+        static constexpr caller_type dispatcher[sizeof...(Types)] = {&variant::caller < result_type,
+                                                                     storage_type const&,
+                                                                     Visitor &&,
+                                                                     Types const&,
+                                                                     Args && ... > ...};
+        return dispatcher[which_](
             *storage_, std::forward<Visitor>(visitor), std::forward<Args>(args)...);
     }
 
@@ -245,27 +251,27 @@ public:
         using result_type = result_of<Visitor&&, type<0>&, Args&&...>;
         using caller_type
             = result_type (*)(storage_type& storage, Visitor&& visitor, Args&&... args);
-        static constexpr caller_type dispatcher_[sizeof...(Types)] = {
-            &variant::caller < result_type, storage_type&, Visitor &&, Types&, Args&&...> ...};
-        return dispatcher_[which_](
+        static constexpr caller_type dispatcher[sizeof...(Types)] = {
+            &variant::caller < result_type, storage_type&, Visitor &&, Types&, Args && ... > ...};
+        return dispatcher[which_](
             *storage_, std::forward<Visitor>(visitor), std::forward<Args>(args)...);
     }
 
     template <typename Visitor, typename... Args>
     decltype(auto) apply_visitor(Visitor&& visitor, Args&&... args) &&
     {
-        static_assert(detail::is_same<result_of<Visitor&&, unwrap_type<Types>&&, Args&&...>...>::value,
-                      "non-identical return types in visitor");
+        static_assert(
+            detail::is_same<result_of<Visitor&&, unwrap_type<Types>&&, Args&&...>...>::value,
+            "non-identical return types in visitor");
         using result_type = result_of<Visitor&&, type<0>&&, Args&&...>;
         using caller_type
             = result_type (*)(storage_type&& storage, Visitor&& visitor, Args&&... args);
-        static constexpr caller_type dispatcher_[sizeof...(Types)]
-            = {&variant::caller < result_type,
-               storage_type &&,
-               Visitor &&,
-               Types &&,
-               Args&&...> ...};
-        return dispatcher_[which_](
+        static constexpr caller_type dispatcher[sizeof...(Types)] = {&variant::caller < result_type,
+                                                                     storage_type &&,
+                                                                     Visitor &&,
+                                                                     Types &&,
+                                                                     Args && ... > ...};
+        return dispatcher[which_](
             std::move(*storage_), std::forward<Visitor>(visitor), std::forward<Args>(args)...);
     }
 
@@ -480,7 +486,7 @@ namespace detail
     struct contained_t<T, variant<Types...>> : contained_t<T, Types...>
     {
     };
-}   // End of namespace cxutil::detail
-}   // End of namespace cxutil
+} // End of namespace cxutil::detail
+} // End of namespace cxutil
 
-#endif  // CXUTIL_VARIANT_VARIANT_HPP
+#endif // CXUTIL_VARIANT_VARIANT_HPP

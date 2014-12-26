@@ -4,9 +4,31 @@
 #pragma once
 
 #include <tuple>
+#include <cxutil/type_traits/traits.hpp>
 
 namespace cxutil
 {
+/**
+ * type_index retrieves the first index of type T from Tuple
+ */
+template <typename T, typename Tuple>
+struct type_index;
+
+template <typename T, typename... Types>
+struct type_index<T, std::tuple<T, Types...>>
+{
+    static constexpr std::size_t value = 0;
+};
+
+template <typename T, typename U, typename... Types>
+struct type_index<T, std::tuple<U, Types...>>
+{
+    static constexpr std::size_t value = 1 + type_index<T, std::tuple<Types...>>::value;
+};
+
+template <typename T, typename Tuple>
+constexpr std::size_t typeindex = type_index<T, Tuple>::value;
+
 template <typename T>
 struct tuple_head;
 
@@ -42,45 +64,18 @@ struct tuple_empty<std::tuple<>>
 
 namespace detail
 {
-    template <typename T, typename Tp>
-    struct contains;
+    template <typename T, typename V>
+    struct add_head;
+
     template <typename T, typename... Types>
-    struct contains<T, std::tuple<T, Types...>>
+    struct add_head<T, std::tuple<Types...>>
     {
-        static constexpr bool value = true;
-    };
-    template <typename T, typename U, typename... Types>
-    struct contains<T, std::tuple<U, Types...>>
-    {
-        static constexpr bool value = contains<T, std::tuple<Types...>>::value;
-    };
-    template <typename T>
-    struct contains<T, std::tuple<>>
-    {
-        static constexpr bool value = false;
+        typedef std::tuple<T, Types...> type;
     };
 } // End of namespace cxutil::detail
 
 template <typename T>
 struct dedup;
-
-template <typename T>
-struct dedup<std::tuple<T>>
-{
-    typedef std::tuple<T> type;
-};
-
-template <typename T>
-struct dedup<std::tuple<T, T>>
-{
-    typedef std::tuple<T> type;
-};
-
-template <typename T, typename U>
-struct dedup<std::tuple<T, U>>
-{
-    typedef std::tuple<T, U> type;
-};
 
 template <>
 struct dedup<std::tuple<>>
@@ -88,12 +83,19 @@ struct dedup<std::tuple<>>
     typedef std::tuple<> type;
 };
 
+template <typename T>
+struct dedup<std::tuple<T>>
+{
+    typedef std::tuple<T> type;
+};
+
 template <typename T, typename... Types>
 struct dedup<std::tuple<T, Types...>>
 {
-    typedef typename std::conditional<detail::contains<T, std::tuple<Types...>>::value,
-                                      typename dedup<std::tuple<Types...>>::type,
-                                      std::tuple<T, Types...>>::type type;
+    typedef typename dedup<std::tuple<Types...>>::type deduped_tail;
+    typedef typename std::conditional<detail::contained_t<T, Types...>::value,
+                                      deduped_tail,
+                                      typename detail::add_head<T, deduped_tail>::type>::type type;
 };
 
 } // End of namespace cxutil

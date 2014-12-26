@@ -27,7 +27,7 @@ namespace detail
             return false;
         }
     };
-}   // End of namespace cxutil::detail
+} // End of namespace cxutil::detail
 
 template <typename... lhs_types, typename... rhs_types>
 bool operator==(variant<lhs_types...> const& lhs, variant<rhs_types...> const& rhs)
@@ -53,7 +53,7 @@ namespace detail
             return (which_bounded_type<VariantType, L> < which_bounded_type<VariantType, R>);
         }
     };
-}   // End of namespace cxutil::detail
+} // End of namespace cxutil::detail
 
 template <typename... Types>
 bool operator<(variant<Types...> const& lhs, variant<Types...> const& rhs)
@@ -61,6 +61,6 @@ bool operator<(variant<Types...> const& lhs, variant<Types...> const& rhs)
     detail::less_than_comparator<variant<Types...>> less_than_comparator;
     return apply_visitor(less_than_comparator, lhs, rhs);
 }
-}   // End of namespace cxutil
+} // End of namespace cxutil
 
-#endif  // CXUTIL_VARIANT_COMPARE_HPP
+#endif // CXUTIL_VARIANT_COMPARE_HPP

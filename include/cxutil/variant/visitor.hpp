@@ -83,12 +83,12 @@ namespace detail
         template <typename Visitor>
         Ret operator()(Visitor&& visitor, First&& first, Rest&&... rest) const
         {
-            subvisitor<Ret, Visitor&&, First&&> const subvisitor_{std::forward<Visitor>(visitor),
-                                                                  std::forward<First>(first)};
-            return base::operator()(subvisitor_, std::forward<Rest>(rest)...);
+            subvisitor<Ret, Visitor&&, First&&> const subvisitor{std::forward<Visitor>(visitor),
+                                                                 std::forward<First>(first)};
+            return base::operator()(subvisitor, std::forward<Rest>(rest)...);
         }
     };
-}   // End of namespace cxutil::detail
+} // End of namespace cxutil::detail
 
 template <typename Visitor, typename First, typename... Rest>
 decltype(auto) apply_visitor(Visitor&& visitor, First&& first, Rest&&... rest)
@@ -96,8 +96,8 @@ decltype(auto) apply_visitor(Visitor&& visitor, First&& first, Rest&&... rest)
     using result_type = result_of<Visitor&&,
                                   detail::equivalent_type<First&&>,
                                   detail::equivalent_type<Rest&&>...>;
-    detail::visitor_partially_applier<result_type, First&&, Rest&&...> apply_visitor_partially_;
-    return apply_visitor_partially_(
+    detail::visitor_partially_applier<result_type, First&&, Rest&&...> apply_visitor_partially;
+    return apply_visitor_partially(
         std::forward<Visitor>(visitor), std::forward<First>(first), std::forward<Rest>(rest)...);
 }
 
@@ -141,13 +141,13 @@ namespace detail
     private:
         Visitor visitor_;
     };
-}   // End of namespace cxutil::detail
+} // End of namespace cxutil::detail
 
 template <typename Visitor>
 constexpr detail::delayed_visitor_applier<Visitor> apply_visitor(Visitor&& visitor) noexcept
 {
     return std::forward<Visitor>(visitor);
 }
-}   // End of namespace cxutil
+} // End of namespace cxutil
 
-#endif  // CXUTIL_VARIANT_VISITOR_HPP
+#endif // CXUTIL_VARIANT_VISITOR_HPP

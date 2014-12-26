@@ -124,7 +124,7 @@ namespace detail
     {
         using type = R(A...);
     };
-}   // End of namespace cxutil::detail
+} // End of namespace cxutil::detail
 template <typename T>
 using get_signature = typename detail::get_signature_impl<T>::type;
 
@@ -235,5 +235,5 @@ struct function_traits<R (C::*)(A...) const volatile>
         typedef typename std::tuple_element<N, arguments_tuple>::type type;
     };
 };
-}   // End of namespace cxutil
-#endif  // CXUTIL_FUNCTION_TRAITS_HPP
+} // End of namespace cxutil
+#endif // CXUTIL_FUNCTION_TRAITS_HPP

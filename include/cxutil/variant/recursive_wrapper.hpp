@@ -33,9 +33,7 @@ struct recursive_wrapper final
 
     recursive_wrapper(recursive_wrapper& rhs) : recursive_wrapper(rhs.get()) { ; }
 
-    recursive_wrapper(recursive_wrapper&& rhs) noexcept : recursive_wrapper(std::move(rhs).get())
-    {
-    }
+    recursive_wrapper(recursive_wrapper&& rhs) noexcept : recursive_wrapper(std::move(rhs).get()) {}
 
     recursive_wrapper& operator=(recursive_wrapper const& rhs) { get() = rhs.get(); }
 
@@ -108,7 +106,7 @@ namespace detail
             return static_cast<type>(std::forward<Model>(value).get());
         }
     };
-}   // End of namespace cxutil::detail
+} // End of namespace cxutil::detail
 
 template <typename Wrapped>
 using unwrap_type = typename detail::unwrap_type<unrefcv<Wrapped>, Wrapped>::type;
@@ -125,6 +123,6 @@ void swap(recursive_wrapper<WrappedType>& lhs, recursive_wrapper<WrappedType>& r
 {
     lhs.swap(rhs);
 }
-}   // End of namespace cxutil
+} // End of namespace cxutil
 
-#endif  // CXUTIL_VARIANT_RECURSIVE_WRAPPER_HPP
+#endif // CXUTIL_VARIANT_RECURSIVE_WRAPPER_HPP

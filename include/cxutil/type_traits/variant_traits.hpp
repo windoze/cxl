@@ -3,52 +3,25 @@
 
 #pragma once
 
-#include <tuple>
+#include <cxutil/type_traits/traits.hpp>
 #include <cxutil/variant/variant.hpp>
 
 namespace cxutil
 {
 namespace detail
 {
-    template <typename T, typename Tp>
-    struct contains;
+    template <typename T, typename V>
+    struct add_head;
+
     template <typename T, typename... Types>
-    struct contains<T, variant<T, Types...>>
+    struct add_head<T, variant<Types...>>
     {
-        static constexpr bool value = true;
-    };
-    template <typename T, typename U, typename... Types>
-    struct contains<T, variant<U, Types...>>
-    {
-        static constexpr bool value = contains<T, variant<Types...>>::value;
-    };
-    template <typename T>
-    struct contains<T, variant<>>
-    {
-        static constexpr bool value = false;
+        typedef variant<T, Types...> type;
     };
 } // End of namespace cxutil::detail
 
 template <typename T>
 struct dedup;
-
-template <typename T>
-struct dedup<variant<T>>
-{
-    typedef variant<T> type;
-};
-
-template <typename T>
-struct dedup<variant<T, T>>
-{
-    typedef variant<T> type;
-};
-
-template <typename T, typename U>
-struct dedup<variant<T, U>>
-{
-    typedef variant<T, U> type;
-};
 
 template <>
 struct dedup<variant<>>
@@ -56,13 +29,26 @@ struct dedup<variant<>>
     typedef variant<> type;
 };
 
+template <typename T>
+struct dedup<variant<T>>
+{
+    typedef variant<T> type;
+};
+
 template <typename T, typename... Types>
 struct dedup<variant<T, Types...>>
 {
-    typedef typename std::conditional<detail::contains<T, std::tuple<Types...>>::value,
-                                      typename dedup<std::tuple<Types...>>::type,
-                                      std::tuple<T, Types...>>::type type;
+    typedef typename dedup<variant<Types...>>::type deduped_tail;
+    typedef typename std::conditional<detail::contained_t<T, Types...>::value,
+                                      deduped_tail,
+                                      typename detail::add_head<T, deduped_tail>::type>::type type;
 };
+
+/**
+ * Remove duplicated types from variant, only last occurence kept
+ */
+template <typename... Types>
+using deduped_variant = typename dedup<variant<Types...>>::type;
 
 } // End of namespace cxutil
 #endif // CXUTIL_VARIANT_TRAITS_HPP

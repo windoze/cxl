@@ -9,4 +9,4 @@
 #include <cxutil/variant/compare.hpp>
 #include <cxutil/variant/io.hpp>
 
-#endif  // CXUTIL_VARIANT_HPP
+#endif // CXUTIL_VARIANT_HPP

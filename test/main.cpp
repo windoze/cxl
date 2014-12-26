@@ -4,76 +4,92 @@
 #include <cxutil/type_traits.hpp>
 #include <cxutil/variant.hpp>
 
+#define STRINGIZE(x) STRINGIZE2(x)
+#define STRINGIZE2(x) #x
+#define LINE_STRING STRINGIZE(__LINE__)
+#define POS __FILE__ ":" LINE_STRING
+
 using namespace cxutil;
 
-void test_traits()
-{
-    // is_same
-    static_assert(is_same<int, int>, "xx");
-    static_assert(!is_same<int, double>, "xx");
-    static_assert(is_same<int, int, int, int>, "xx");
-    static_assert(!is_same<int, int, int, double>, "xx");
-    static_assert(!is_same<int, int, double, int>, "xx");
-    static_assert(!is_same<double, int, int, int>, "xx");
+// is_same
+static_assert(is_same<int, int>, POS);
+static_assert(!is_same<int, double>, POS);
+static_assert(is_same<int, int, int, int>, POS);
+static_assert(!is_same<int, int, int, double>, POS);
+static_assert(!is_same<int, int, double, int>, POS);
+static_assert(!is_same<double, int, int, int>, POS);
 
-    // unref
-    static_assert(is_same<unref<int&>, int>, "xx");
-    static_assert(is_same<unref<const int&>, int const>, "xx");
-    static_assert(is_same<unref<int>, int>, "xx");
-    static_assert(!is_same<unref<int*>, int>, "xx");
+// unref
+static_assert(is_same<unref<int&>, int>, POS);
+static_assert(is_same<unref<const int&>, int const>, POS);
+static_assert(is_same<unref<int>, int>, POS);
+static_assert(!is_same<unref<int*>, int>, POS);
 
-    // uncv
-    static_assert(is_same<uncv<int const>, int>, "xx");
-    static_assert(is_same<uncv<const int&>, const int&>, "xx");
-    static_assert(is_same<uncv<int>, int>, "xx");
-    static_assert(is_same<uncv<int&>, int&>, "xx");
-    static_assert(is_same<uncv<const int*>, const int*>, "xx");
-    static_assert(is_same<uncv<int* const>, int*>, "xx");
-    static_assert(is_same<uncv<const int* const>, const int*>, "xx");
+// uncv
+static_assert(is_same<uncv<int const>, int>, POS);
+static_assert(is_same<uncv<const int&>, const int&>, POS);
+static_assert(is_same<uncv<int>, int>, POS);
+static_assert(is_same<uncv<int&>, int&>, POS);
+static_assert(is_same<uncv<const int*>, const int*>, POS);
+static_assert(is_same<uncv<int* const>, int*>, POS);
+static_assert(is_same<uncv<const int* const>, const int*>, POS);
 
-    // unrefcv
-    static_assert(is_same<unrefcv<int const>, int>, "xx");
-    static_assert(is_same<unrefcv<const int&>, int>, "xx");
-    static_assert(is_same<unrefcv<int>, int>, "xx");
-    static_assert(is_same<unrefcv<int>, int>, "xx");
-    static_assert(is_same<unrefcv<const int*>, const int*>, "xx");
-    static_assert(is_same<unrefcv<int* const>, int*>, "xx");
-    static_assert(is_same<unrefcv<const int* const>, const int*>, "xx");
+// unrefcv
+static_assert(is_same<unrefcv<int const>, int>, POS);
+static_assert(is_same<unrefcv<const int&>, int>, POS);
+static_assert(is_same<unrefcv<int>, int>, POS);
+static_assert(is_same<unrefcv<int>, int>, POS);
+static_assert(is_same<unrefcv<const int*>, const int*>, POS);
+static_assert(is_same<unrefcv<int* const>, int*>, POS);
+static_assert(is_same<unrefcv<const int* const>, const int*>, POS);
 
-    // add_lref
-    static_assert(is_same<add_lref<int>, int&>, "xx");
-    static_assert(is_same<add_lref<int&>, int&>, "xx");
-    static_assert(is_same<add_lref<const int>, int const&>, "xx");
-    static_assert(is_same<add_lref<const int*>, int const*&>, "xx");
+// add_lref
+static_assert(is_same<add_lref<int>, int&>, POS);
+static_assert(is_same<add_lref<int&>, int&>, POS);
+static_assert(is_same<add_lref<const int>, int const&>, POS);
+static_assert(is_same<add_lref<const int*>, int const*&>, POS);
 
-    // add_rref
-    static_assert(is_same<add_rref<int>, int&&>, "xx");
-    static_assert(is_same<add_rref<int&>, int&>, "xx"); // (int&)&& = int&
-    static_assert(is_same<add_rref<const int>, int const&&>, "xx");
-    static_assert(is_same<add_rref<const int*>, int const*&&>, "xx");
+// add_rref
+static_assert(is_same<add_rref<int>, int&&>, POS);
+static_assert(is_same<add_rref<int&>, int&>, POS); // (int&)&& = int&
+static_assert(is_same<add_rref<const int>, int const&&>, POS);
+static_assert(is_same<add_rref<const int*>, int const*&&>, POS);
 
-    // add_const
-    static_assert(is_same<add_const<int>, int const>, "xx");
-    static_assert(is_same<add_const<const int>, int const>, "xx");
+// add_const
+static_assert(is_same<add_const<int>, int const>, POS);
+static_assert(is_same<add_const<const int>, int const>, POS);
 
-    // add_volatile
-    static_assert(is_same<add_volatile<int>, int volatile>, "xx");
-    static_assert(is_same<add_volatile<volatile int>, int volatile>, "xx");
+// add_volatile
+static_assert(is_same<add_volatile<int>, int volatile>, POS);
+static_assert(is_same<add_volatile<volatile int>, int volatile>, POS);
 
-    // is_ref
-    static_assert(is_ref<int&>, "xx");
-    static_assert(is_ref<int&&>, "xx");
-    static_assert(is_ref<const int&>, "xx");
-    static_assert(!is_ref<int>, "xx");
-    static_assert(!is_ref<int*>, "xx");
+// is_ref
+static_assert(is_ref<int&>, POS);
+static_assert(is_ref<int&&>, POS);
+static_assert(is_ref<const int&>, POS);
+static_assert(!is_ref<int>, POS);
+static_assert(!is_ref<int*>, POS);
 
-    // contained
-    static_assert(contained<int, int, double>, "xx");
-    static_assert(!contained<char, int, double>, "xx");
+// contained
+static_assert(contained<int, int, double>, POS);
+static_assert(!contained<char, int, double>, POS);
 
-    typedef std::tuple<int, int, double> t3;
-    static_assert(is_same<dedup<t3>::type, std::tuple<int, double>>, "xx");
-}
+// dedup tuple
+typedef std::tuple<int, int, double> t3;
+static_assert(is_same<dedup<t3>::type, std::tuple<int, double>>, POS);
+
+// dedup variant
+static_assert(is_same<deduped_variant<int, int, double>, variant<int, double>>, POS);
+static_assert(is_same<deduped_variant<int, double>, variant<int, double>>, POS);
+static_assert(is_same<deduped_variant<int, int, double, double>, variant<int, double>>, POS);
+static_assert(is_same<deduped_variant<int, int, double, double, int, int>, variant<double, int>>,
+              POS);
+
+// type_index
+static_assert(is_same<std::tuple_element<typeindex<int, std::tuple<char, int, double>>,
+                                         std::tuple<char, int, double>>::type,
+                      int>,
+              POS);
 
 void test_variant()
 {
@@ -89,7 +105,7 @@ void test_variant()
     }
 }
 
-void test_rv()
+void test_recursive_variant()
 {
     struct node;
     typedef variant<std::nullptr_t, int, recursive_wrapper<node>> node_data;
@@ -98,8 +114,10 @@ void test_rv()
         node_data left;
         node_data right;
     } t;
-    t.left = 10;
+    t.left = 5;
     t.right = node{10, 20};
+    assert(t.left.get<int>() == 5);
+    assert(t.right.get<node>().right.get<int>() == 20);
 }
 
 void test_move()
@@ -176,24 +194,21 @@ struct oarchive
 void test_io()
 {
     typedef variant<int, double> vt;
-    {
-        vt v(5.5);
-        std::stringstream ss;
-        oarchive oa(ss);
-        write(oa, v);
-        vt v1;
-        iarchive ia(ss);
-        read(ia, v1);
-        assert(v == v1);
-        assert(v1.get<double>() == 5.5);
-    }
+    vt v(5.5);
+    std::stringstream ss;
+    oarchive oa(ss);
+    write(oa, v);
+    vt v1;
+    iarchive ia(ss);
+    read(ia, v1);
+    assert(v == v1);
+    assert(v1.get<double>() == 5.5);
 }
 
 int main()
 {
-    test_traits();
     test_variant();
-    test_rv();
+    test_recursive_variant();
     test_move();
     test_visitor();
     test_print();
