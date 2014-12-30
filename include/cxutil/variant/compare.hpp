@@ -10,8 +10,7 @@ namespace cxutil
 {
 namespace detail
 {
-    struct equality_comparator
-    {
+    struct equality_comparator {
         template <typename T>
         bool operator()(T const& lhs, T const& rhs) const
         {
@@ -39,8 +38,7 @@ bool operator==(variant<lhs_types...> const& lhs, variant<rhs_types...> const& r
 namespace detail
 {
     template <typename VariantType>
-    struct less_than_comparator
-    {
+    struct less_than_comparator {
         template <typename T>
         bool operator()(T const& lhs, T const& rhs) const
         {
@@ -50,7 +48,8 @@ namespace detail
         template <typename L, typename R>
         bool operator()(L const&, R const&) const
         {
-            return (which_bounded_type<VariantType, L> < which_bounded_type<VariantType, R>);
+            return (VariantType::template which_type<L>::value)
+                   < (VariantType::template which_type<R>::value);
         }
     };
 } // End of namespace cxutil::detail

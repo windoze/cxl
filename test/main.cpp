@@ -1,8 +1,8 @@
 #include <assert.h>
 #include <iostream>
 #include <sstream>
-#include <cxutil/type_traits.hpp>
 #include <cxutil/variant.hpp>
+#include <cxutil/type_traits.hpp>
 
 #define STRINGIZE(x) STRINGIZE2(x)
 #define STRINGIZE2(x) #x
@@ -12,6 +12,9 @@
 using namespace cxutil;
 
 // is_same
+
+#if __cplusplus > 201103L
+// C++14 features
 static_assert(is_same<int, int>, POS);
 static_assert(!is_same<int, double>, POS);
 static_assert(is_same<int, int, int, int>, POS);
@@ -90,6 +93,82 @@ static_assert(is_same<std::tuple_element<typeindex<int, std::tuple<char, int, do
                                          std::tuple<char, int, double>>::type,
                       int>,
               POS);
+#else
+// C++11 version
+static_assert(is_same_t<int, int>::value, POS);
+static_assert(!is_same_t<int, double>::value, POS);
+static_assert(is_same_t<int, int, int, int>::value, POS);
+static_assert(!is_same_t<int, int, int, double>::value, POS);
+static_assert(!is_same_t<int, int, double, int>::value, POS);
+static_assert(!is_same_t<double, int, int, int>::value, POS);
+
+// unref
+static_assert(is_same_t<unref<int&>, int>::value, POS);
+static_assert(is_same_t<unref<const int&>, int const>::value, POS);
+static_assert(is_same_t<unref<int>, int>::value, POS);
+static_assert(!is_same_t<unref<int*>, int>::value, POS);
+
+// uncv
+static_assert(is_same_t<uncv<int const>, int>::value, POS);
+static_assert(is_same_t<uncv<const int&>, const int&>::value, POS);
+static_assert(is_same_t<uncv<int>, int>::value, POS);
+static_assert(is_same_t<uncv<int&>, int&>::value, POS);
+static_assert(is_same_t<uncv<const int*>, const int*>::value, POS);
+static_assert(is_same_t<uncv<int* const>, int*>::value, POS);
+static_assert(is_same_t<uncv<const int* const>, const int*>::value, POS);
+
+// unrefcv
+static_assert(is_same_t<unrefcv<int const>, int>::value, POS);
+static_assert(is_same_t<unrefcv<const int&>, int>::value, POS);
+static_assert(is_same_t<unrefcv<int>, int>::value, POS);
+static_assert(is_same_t<unrefcv<int>, int>::value, POS);
+static_assert(is_same_t<unrefcv<const int*>, const int*>::value, POS);
+static_assert(is_same_t<unrefcv<int* const>, int*>::value, POS);
+static_assert(is_same_t<unrefcv<const int* const>, const int*>::value, POS);
+
+// add_lref
+static_assert(is_same_t<add_lref<int>, int&>::value, POS);
+static_assert(is_same_t<add_lref<int&>, int&>::value, POS);
+static_assert(is_same_t<add_lref<const int>, int const&>::value, POS);
+static_assert(is_same_t<add_lref<const int*>, int const*&>::value, POS);
+
+// add_rref
+static_assert(is_same_t<add_rref<int>, int&&>::value, POS);
+static_assert(is_same_t<add_rref<int&>, int&>::value, POS); // (int&)&& = int&
+static_assert(is_same_t<add_rref<const int>, int const&&>::value, POS);
+static_assert(is_same_t<add_rref<const int*>, int const*&&>::value, POS);
+
+// add_const
+static_assert(is_same_t<add_const<int>, int const>::value, POS);
+static_assert(is_same_t<add_const<const int>, int const>::value, POS);
+
+// add_volatile
+static_assert(is_same_t<add_volatile<int>, int volatile>::value, POS);
+static_assert(is_same_t<add_volatile<volatile int>, int volatile>::value, POS);
+
+// contained
+static_assert(contained_t<int, int, double>::value, POS);
+static_assert(!contained_t<char, int, double>::value, POS);
+
+// dedup tuple
+typedef std::tuple<int, int, double> t3;
+static_assert(is_same_t<dedup<t3>::type, std::tuple<int, double>>::value, POS);
+
+// dedup variant
+static_assert(is_same_t<deduped_variant<int, int, double>, variant<int, double>>::value, POS);
+static_assert(is_same_t<deduped_variant<int, double>, variant<int, double>>::value, POS);
+static_assert(is_same_t<deduped_variant<int, int, double, double>, variant<int, double>>::value,
+              POS);
+static_assert(
+    is_same_t<deduped_variant<int, int, double, double, int, int>, variant<double, int>>::value,
+    POS);
+
+// type_index
+static_assert(is_same_t<std::tuple_element<type_index<int, std::tuple<char, int, double>>::value,
+                                           std::tuple<char, int, double>>::type,
+                        int>::value,
+              POS);
+#endif
 
 void test_variant()
 {
@@ -109,8 +188,7 @@ void test_recursive_variant()
 {
     struct node;
     typedef variant<std::nullptr_t, int, recursive_wrapper<node>> node_data;
-    struct node
-    {
+    struct node {
         node_data left;
         node_data right;
     } t;
@@ -141,8 +219,7 @@ void test_move()
 void test_visitor()
 {
     typedef variant<int, double> vt;
-    struct visitor
-    {
+    struct visitor {
         std::string operator()(int x) && { return "int"; }
         std::string operator()(double x) && { return "double"; }
     };
@@ -167,8 +244,7 @@ void test_print()
     }
 }
 
-struct iarchive
-{
+struct iarchive {
     iarchive(std::istream& is) : is_(is) {}
     template <typename T>
     typename std::enable_if<std::is_arithmetic<T>::value, iarchive&>::type operator>>(T& n)
@@ -179,8 +255,7 @@ struct iarchive
     std::istream& is_;
 };
 
-struct oarchive
-{
+struct oarchive {
     oarchive(std::ostream& os) : os_(os) {}
     template <typename T>
     typename std::enable_if<std::is_arithmetic<T>::value, oarchive&>::type operator<<(const T& n)

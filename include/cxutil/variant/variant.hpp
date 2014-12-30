@@ -6,7 +6,6 @@
 #include <stdexcept>
 #include <typeinfo>
 #include <algorithm>
-#include <cxutil/type_traits.hpp>
 #include <cxutil/variant/recursive_wrapper.hpp>
 
 namespace cxutil
@@ -19,16 +18,17 @@ namespace cxutil
  *
  * Exception class, thrown when getting specific type from a variant contains other types
  */
-struct bad_get : std::runtime_error
-{
+struct bad_get : std::runtime_error {
     explicit bad_get(const char* what) : std::runtime_error(what) { ; }
     explicit bad_get(std::string const& what) : std::runtime_error(what) { ; }
 };
 #pragma clang diagnostic pop
 
+/**
+ * @brief The variant template
+ */
 template <typename... Types>
-struct variant final
-{
+struct variant final {
     using size_type = std::size_t;
 
     static_assert(and_<!std::is_reference<Types>::value...>::value, "xx");
@@ -38,7 +38,7 @@ struct variant final
     static constexpr size_type npos = get_offset<0>::value;
 
     template <typename T>
-    using which_type = get_offset<0, std::is_same<T, unwrap_type<Types>>::value...>;
+    using which_type = get_offset<0, is_same_t<T, unwrap_type<Types>>::value...>;
 
     template <size_type N>
     using type = nth_type<N, unwrap_type<Types>...>;
@@ -68,8 +68,8 @@ private:
     template <size_type N>
     using internal_type = nth_type<N, Types...>;
 
-    using storage_type = std::aligned_union_t<0, Types...>;
-    std::unique_ptr<storage_type> storage_ = std::make_unique<storage_type>();
+    using storage_type = typename std::aligned_union<0, Types...>::type;
+    std::unique_ptr<storage_type> storage_{new storage_type};
     size_type which_ = npos;
 
     template <typename ResultType, typename Storage, typename Visitor, typename T, typename... Args>
@@ -79,12 +79,11 @@ private:
                                               std::forward<Args>(args)...);
     }
 
-    struct destroyer
-    {
+    struct destroyer {
         template <typename T>
         void operator()(T& value) const
         {
-            value.~T();
+            value. ~T();
         }
     };
 
@@ -101,7 +100,7 @@ private:
     template <typename... Args>
     void construct(Args&&... args)
     {
-        constexpr size_type which = which_is_constructible < Args && ... > ::value;
+        constexpr size_type which = which_is_constructible<Args&&...>::value;
         static_assert((which != npos),
                       "no one type can be constructed from specified parameter pack");
         // -Wconversion warning here means, that construction or assignment may imply undesirable
@@ -110,8 +109,7 @@ private:
         which_ = which;
     }
 
-    struct constructor
-    {
+    struct constructor {
         template <typename R>
         void operator()(R&& rhs) const
         {
@@ -121,8 +119,7 @@ private:
         variant& destination_;
     };
 
-    struct assigner
-    {
+    struct assigner {
         template <typename L, typename R>
         enable_if<std::is_constructible<L, R>::value> reconstruct(R&& rhs) const noexcept
         {
@@ -201,8 +198,7 @@ private:
         variant& lhs_;
     };
 
-    struct reflect
-    {
+    struct reflect {
         template <typename T>
         std::type_info const& operator()(T const&) const
         {
@@ -225,52 +221,46 @@ public:
     size_type which() const { return which_; }
 
     template <typename Visitor, typename... Args>
-    decltype(auto) apply_visitor(Visitor&& visitor, Args&&... args) const &
+    result_of<Visitor&&, type<0>&, Args&&...> apply_visitor(Visitor&& visitor, Args&&... args) const
+        &
     {
         static_assert(
-            detail::is_same<result_of<Visitor&&, unwrap_type<Types> const&, Args&&...>...>::value,
+            is_same_t<result_of<Visitor&&, unwrap_type<Types> const&, Args&&...>...>::value,
             "non-identical return types in visitor");
         using result_type = result_of<Visitor&&, type<0> const&, Args&&...>;
         using caller_type
             = result_type (*)(storage_type const& storage, Visitor&& visitor, Args&&... args);
-        static constexpr caller_type dispatcher[sizeof...(Types)] = {&variant::caller < result_type,
-                                                                     storage_type const&,
-                                                                     Visitor &&,
-                                                                     Types const&,
-                                                                     Args && ... > ...};
+        static constexpr caller_type dispatcher[sizeof...(Types)]
+            = {&variant::
+                   caller<result_type, storage_type const&, Visitor&&, Types const&, Args&&...>...};
         return dispatcher[which_](
             *storage_, std::forward<Visitor>(visitor), std::forward<Args>(args)...);
     }
 
     template <typename Visitor, typename... Args>
-    decltype(auto) apply_visitor(Visitor&& visitor, Args&&... args) &
+    result_of<Visitor&&, type<0>&, Args&&...> apply_visitor(Visitor&& visitor, Args&&... args) &
     {
-        static_assert(
-            detail::is_same<result_of<Visitor&&, unwrap_type<Types>&, Args&&...>...>::value,
-            "non-identical return types in visitor");
+        static_assert(is_same_t<result_of<Visitor&&, unwrap_type<Types>&, Args&&...>...>::value,
+                      "non-identical return types in visitor");
         using result_type = result_of<Visitor&&, type<0>&, Args&&...>;
         using caller_type
             = result_type (*)(storage_type& storage, Visitor&& visitor, Args&&... args);
-        static constexpr caller_type dispatcher[sizeof...(Types)] = {
-            &variant::caller < result_type, storage_type&, Visitor &&, Types&, Args && ... > ...};
+        static constexpr caller_type dispatcher[sizeof...(Types)]
+            = {&variant::caller<result_type, storage_type&, Visitor&&, Types&, Args&&...>...};
         return dispatcher[which_](
             *storage_, std::forward<Visitor>(visitor), std::forward<Args>(args)...);
     }
 
     template <typename Visitor, typename... Args>
-    decltype(auto) apply_visitor(Visitor&& visitor, Args&&... args) &&
+    result_of<Visitor&&, type<0>&, Args&&...> apply_visitor(Visitor&& visitor, Args&&... args) &&
     {
-        static_assert(
-            detail::is_same<result_of<Visitor&&, unwrap_type<Types>&&, Args&&...>...>::value,
-            "non-identical return types in visitor");
+        static_assert(is_same_t<result_of<Visitor&&, unwrap_type<Types>&&, Args&&...>...>::value,
+                      "non-identical return types in visitor");
         using result_type = result_of<Visitor&&, type<0>&&, Args&&...>;
         using caller_type
             = result_type (*)(storage_type&& storage, Visitor&& visitor, Args&&... args);
-        static constexpr caller_type dispatcher[sizeof...(Types)] = {&variant::caller < result_type,
-                                                                     storage_type &&,
-                                                                     Visitor &&,
-                                                                     Types &&,
-                                                                     Args && ... > ...};
+        static constexpr caller_type dispatcher[sizeof...(Types)]
+            = {&variant::caller<result_type, storage_type&&, Visitor&&, Types&&, Args&&...>...};
         return dispatcher[which_](
             std::move(*storage_), std::forward<Visitor>(visitor), std::forward<Args>(args)...);
     }
@@ -373,7 +363,7 @@ public:
     }
 
     template <size_type N>
-    decltype(auto) get() const &
+    internal_type<N> const& get() const &
     {
         if (which_ != N) {
             throw bad_get("get: containing type does not match requested type");
@@ -395,7 +385,7 @@ public:
     }
 
     template <size_type N>
-    decltype(auto) get() &
+    internal_type<N>& get() &
     {
         if (which_ != N) {
             throw bad_get("get: containing type does not match requested type");
@@ -417,7 +407,7 @@ public:
     }
 
     template <size_type N>
-    decltype(auto) get() &&
+    internal_type<N>&& get() &&
     {
         if (which_ != N) {
             throw bad_get("get: containing type does not match requested type");
@@ -433,22 +423,22 @@ template <>
 struct variant<>; // Intentionally declared but not defined. This leaves open the possibility to
 // define a meaningful specialization by yourself.
 
+template <typename T>
+struct is_variant : bool_t<false> {
+};
+
+template <typename First, typename... Rest>
+struct is_variant<variant<First, Rest...>> : bool_t<true> {
+};
+
+#if __cplusplus > 201103L
 template <typename VariantType, typename T>
 constexpr typename VariantType::size_type which_bounded_type
     = VariantType::template which_type<T>::value;
 
 template <typename T>
-struct is_variant : bool_t<false>
-{
-};
-
-template <typename First, typename... Rest>
-struct is_variant<variant<First, Rest...>> : bool_t<true>
-{
-};
-
-template <typename T>
 constexpr bool is_variant_v = is_variant<unrefcv<T>>::value;
+#endif
 
 template <typename... Types>
 void swap(variant<Types...>& lhs, variant<Types...>& rhs) noexcept
@@ -480,13 +470,9 @@ T&& get(variant<Types...>&& variant)
     return std::move(variant).template get<T>();
 }
 
-namespace detail
-{
-    template <typename T, typename... Types>
-    struct contained_t<T, variant<Types...>> : contained_t<T, Types...>
-    {
-    };
-} // End of namespace cxutil::detail
+template <typename T, typename... Types>
+struct contained_t<T, variant<Types...>> : contained_t<T, Types...> {
+};
 } // End of namespace cxutil
 
 #endif // CXUTIL_VARIANT_VARIANT_HPP

@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include <cxutil/type_traits/traits.hpp>
 #include <cxutil/variant/variant.hpp>
 
 namespace cxutil
@@ -14,8 +13,7 @@ namespace detail
     struct add_head;
 
     template <typename T, typename... Types>
-    struct add_head<T, variant<Types...>>
-    {
+    struct add_head<T, variant<Types...>> {
         typedef variant<T, Types...> type;
     };
 } // End of namespace cxutil::detail
@@ -24,22 +22,19 @@ template <typename T>
 struct dedup;
 
 template <>
-struct dedup<variant<>>
-{
+struct dedup<variant<>> {
     typedef variant<> type;
 };
 
 template <typename T>
-struct dedup<variant<T>>
-{
+struct dedup<variant<T>> {
     typedef variant<T> type;
 };
 
 template <typename T, typename... Types>
-struct dedup<variant<T, Types...>>
-{
+struct dedup<variant<T, Types...>> {
     typedef typename dedup<variant<Types...>>::type deduped_tail;
-    typedef typename std::conditional<detail::contained_t<T, Types...>::value,
+    typedef typename std::conditional<contained_t<T, Types...>::value,
                                       deduped_tail,
                                       typename detail::add_head<T, deduped_tail>::type>::type type;
 };

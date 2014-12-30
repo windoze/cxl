@@ -3,10 +3,8 @@
 
 #pragma once
 
-#include <cxutil/type_traits.hpp>
-#include <cxutil/variant/variant.hpp>
-
 #include <utility>
+#include <cxutil/variant/variant.hpp>
 
 namespace cxutil
 {
@@ -16,14 +14,12 @@ namespace detail
     struct underlying_type;
 
     template <typename Visitable>
-    struct underlying_type<Visitable, true>
-    {
+    struct underlying_type<Visitable, true> {
         using type = copy_refcv<Visitable&&, typename unref<Visitable>::template type<0>>;
     };
 
     template <typename Nonvisitable>
-    struct underlying_type<Nonvisitable, false>
-    {
+    struct underlying_type<Nonvisitable, false> {
         using type = Nonvisitable;
     };
 
@@ -34,13 +30,13 @@ namespace detail
     struct subvisitor;
 
     template <typename Ret, typename Supervisitor, typename Visitable>
-    struct subvisitor<Ret, Supervisitor, Visitable, true>
-    { // visitation
+    struct subvisitor<Ret, Supervisitor, Visitable, true> { // visitation
         template <typename... Visited>
         Ret operator()(Visited&&... visited) const
         {
-            return std::forward<Visitable>(visitable_).apply_visitor(
-                std::forward<Supervisitor>(supervisitor_), std::forward<Visited>(visited)...);
+            return std::forward<Visitable>(visitable_)
+                .apply_visitor(std::forward<Supervisitor>(supervisitor_),
+                               std::forward<Visited>(visited)...);
         }
 
         Supervisitor&& supervisitor_;
@@ -48,8 +44,7 @@ namespace detail
     };
 
     template <typename Ret, typename Supervisitor, typename T>
-    struct subvisitor<Ret, Supervisitor, T, false>
-    { // forwarding
+    struct subvisitor<Ret, Supervisitor, T, false> { // forwarding
 
         template <typename... Visited>
         Ret operator()(Visited&&... visited) const
@@ -66,8 +61,7 @@ namespace detail
     struct visitor_partially_applier;
 
     template <typename Ret>
-    struct visitor_partially_applier<Ret>
-    { // backward
+    struct visitor_partially_applier<Ret> { // backward
         template <typename Visitor>
         Ret operator()(Visitor&& visitor) const
         {
@@ -76,8 +70,8 @@ namespace detail
     };
 
     template <typename Ret, typename First, typename... Rest>
-    struct visitor_partially_applier<Ret, First, Rest...> : visitor_partially_applier<Ret, Rest...>
-    { // forward
+    struct visitor_partially_applier<Ret, First, Rest...>
+        : visitor_partially_applier<Ret, Rest...> { // forward
         using base = visitor_partially_applier<Ret, Rest...> const;
 
         template <typename Visitor>
@@ -91,7 +85,8 @@ namespace detail
 } // End of namespace cxutil::detail
 
 template <typename Visitor, typename First, typename... Rest>
-decltype(auto) apply_visitor(Visitor&& visitor, First&& first, Rest&&... rest)
+result_of<Visitor&&, detail::equivalent_type<First&&>, detail::equivalent_type<Rest&&>...>
+apply_visitor(Visitor&& visitor, First&& first, Rest&&... rest)
 {
     using result_type = result_of<Visitor&&,
                                   detail::equivalent_type<First&&>,
@@ -104,9 +99,8 @@ decltype(auto) apply_visitor(Visitor&& visitor, First&& first, Rest&&... rest)
 namespace detail
 {
     template <typename Visitor>
-    struct delayed_visitor_applier
-    {
-        static_assert(!is_rref<Visitor>, "xx");
+    struct delayed_visitor_applier {
+        static_assert(!std::is_rvalue_reference<Visitor>::value, "xx");
 
         constexpr delayed_visitor_applier(Visitor&& visitor) noexcept
             : visitor_(std::forward<Visitor>(visitor))
@@ -115,25 +109,30 @@ namespace detail
         }
 
         template <typename Visitable, typename = enable_if<is_variant<unrefcv<Visitable>>::value>>
-        decltype(auto) operator()(Visitable&& visitable) const
+        auto
+        operator()(Visitable&& visitable) const -> decltype(std::forward<Visitable>(visitable)
+                                                                .apply_visitor(this -> visitor_))
         {
             return std::forward<Visitable>(visitable).apply_visitor(visitor_);
         }
 
         template <typename Visitable, typename = enable_if<is_variant<unrefcv<Visitable>>::value>>
-        decltype(auto) operator()(Visitable&& visitable)
+        auto operator()(Visitable&& visitable)
+            -> decltype(std::forward<Visitable>(visitable).apply_visitor(this -> visitor_))
         {
             return std::forward<Visitable>(visitable).apply_visitor(visitor_);
         }
 
         template <typename... Visitables>
-        decltype(auto) operator()(Visitables&&... visitables) const
+        auto operator()(Visitables&&... visitables) const
+            -> decltype(apply_visitor(this -> visitor_, std::forward<Visitables>(visitables)...))
         {
             return apply_visitor(visitor_, std::forward<Visitables>(visitables)...);
         }
 
         template <typename... Visitables>
-        decltype(auto) operator()(Visitables&&... visitables)
+        auto operator()(Visitables&&... visitables)
+            -> decltype(apply_visitor(this -> visitor_, std::forward<Visitables>(visitables)...))
         {
             return apply_visitor(visitor_, std::forward<Visitables>(visitables)...);
         }
