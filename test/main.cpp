@@ -3,6 +3,10 @@
 #include <sstream>
 #include <cxutil/variant.hpp>
 #include <cxutil/type_traits.hpp>
+#include <cxutil/stdio_filebuf.hpp>
+#include <cxutil/str_lit.hpp>
+#include <fcntl.h>
+#include <cxutil/reflection.hpp>
 
 #define STRINGIZE(x) STRINGIZE2(x)
 #define STRINGIZE2(x) #x
@@ -280,6 +284,51 @@ void test_io()
     assert(v1.get<double>() == 5.5);
 }
 
+void test_filebuf() {
+    int fd=open("/tmp/x", O_CREAT | O_RDWR, 0644);
+    stdio_filebuf<char> *fb=new stdio_filebuf<char>;
+    fb->open(fd, std::ios::in | std::ios::out);
+    std::iostream s(fb);
+    s << "abc" << std::endl;
+}
+
+#include "main.hpp"
+#include "main_reflected.hpp"
+
+void test_reflected() {
+    S s{420, 4.2, "hello", {4200}};
+    // Test cxutil::reflection::set
+    try {
+        // This will succeed
+        cxutil::reflection::set("m1", s, 210);
+        // This will fail
+        cxutil::reflection::set(1, s, "210");
+        assert(false);
+    } catch(cxutil::bad_get &) {
+    }
+    assert(s.m1==210);
+
+    try {
+        // This will fail, index out of range
+        cxutil::reflection::set(10, s, 55);
+        assert(false);
+    } catch(std::out_of_range &) {
+    }
+
+    try {
+        // This will fail, unknown key
+        cxutil::reflection::set("unknown key", s, 55);
+        assert(false);
+    } catch(std::out_of_range &) {
+    }
+
+    // Test std::get
+    std::get<2>(s)="world";
+    assert(s.m3==std::string("world"));
+    // Test cxutil::reflection::get
+    assert(cxutil::reflection::get(2, s).get<std::string>()==std::string("world"));
+}
+
 int main()
 {
     test_variant();
@@ -288,5 +337,7 @@ int main()
     test_visitor();
     test_print();
     test_io();
+    test_filebuf();
+    test_reflected();
     return 0;
 }

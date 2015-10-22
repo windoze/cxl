@@ -10,10 +10,13 @@
 
 namespace cxutil
 {
+
+template <typename T>
+std::string to_string(const T& oprand);
+
 namespace detail
 {
-    struct printer
-    {
+    struct printer {
         template <typename type>
         std::ostream& operator()(type const& value) const
         {
@@ -27,19 +30,16 @@ namespace detail
     struct variant_reader;
 
     template <typename Src, typename... Types>
-    struct variant_reader<Src, std::tuple<Types...>>
-    {
+    struct variant_reader<Src, std::tuple<Types...>> {
         typedef std::tuple<Types...> type_tuple;
 
         template <typename V>
-        struct read_null
-        {
+        struct read_null {
             static void invoke(Src&, int, V&) { /* Do nothing */}
         };
 
         template <typename V>
-        struct read_impl
-        {
+        struct read_impl {
             static void invoke(Src& src, int which, V& v)
             {
                 if (which == 0) {
@@ -55,15 +55,13 @@ namespace detail
         template <typename V>
         static void read(Src& src, int which, V& v)
         {
-            std::conditional<tuple_empty<type_tuple>::value,
-                             read_null<V>,
+            std::conditional<tuple_empty<type_tuple>::value, read_null<V>,
                              read_impl<V>>::type::invoke(src, which, v);
         }
     };
 
     template <typename Sink>
-    struct variant_writer
-    {
+    struct variant_writer {
         variant_writer(Sink& sink) : sink_(sink) {}
         template <class T>
         void operator()(T const& value) const
@@ -72,6 +70,29 @@ namespace detail
         }
         Sink& sink_;
     };
+
+    template <typename T>
+    std::string to_string_impl(const T& t)
+    {
+        return std::to_string(t);
+    }
+
+    inline std::string to_string_impl(const std::string& t) { return t; }
+    inline std::string to_string_impl(std::string &&t) { return std::move(t); }
+
+    struct to_string_visitor {
+        template <typename U>
+        std::string operator()(const U& operand) const
+        {
+            return to_string<U>()(operand);
+        }
+    };
+
+    template <typename... T>
+    std::string to_string_impl(const cxutil::variant<T...>& v)
+    {
+        return v.apply_visitor(to_string_visitor());
+    }
 } // End of namespace cxutil::detail
 
 /**
@@ -109,6 +130,13 @@ Sink& write(Sink& sink, const variant<Types...>& v)
     v.apply_visitor(visitor);
     return sink;
 }
+
+template <typename T>
+std::string to_string(const T& oprand)
+{
+    return detail::to_string_impl(oprand);
+}
+
 } // End of namespace cxutil
 
 #endif // CXUTIL_VARIANT_IO_HPP
