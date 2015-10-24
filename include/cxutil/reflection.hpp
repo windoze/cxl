@@ -79,7 +79,7 @@ public:                                                                         
         static constexpr const unsigned long index = INDEX;                                        \
         typedef decltype(owner_type::NAME) type;                                                   \
         static constexpr char const* name() { return #NAME; }                                      \
-        static constexpr char const* key() { return #KEY; }                                        \
+        static constexpr char const* key() { return KEY; }                                         \
         template <typename Owner>                                                                  \
         static constexpr std::enable_if_t<!std::is_const<decltype(Owner::NAME)>::value, type>&     \
         get(Owner& d)                                                                              \
@@ -151,7 +151,7 @@ public:                                                                         
         static constexpr const unsigned long index = INDEX;                                        \
         typedef TYPE type;                                                                         \
         static constexpr char const* name() { return #NAME; }                                      \
-        static constexpr char const* key() { return #KEY; }                                        \
+        static constexpr char const* key() { return KEY; }                                         \
         static constexpr type get(owner_type const& d) { return GETTER; }                          \
         template <typename V>                                                                      \
         static void set(owner_type& d, V&& v)                                                      \
@@ -180,7 +180,7 @@ public:                                                                         
         static constexpr const unsigned long index = INDEX;                                        \
         typedef typename std::add_const<TYPE>::type type;                                          \
         static constexpr char const* name() { return #NAME; }                                      \
-        static constexpr char const* key() { return #KEY; }                                        \
+        static constexpr char const* key() { return KEY; }                                         \
         static constexpr type get(owner_type const& d) { return GETTER; }                          \
         ARGS;                                                                                      \
     };

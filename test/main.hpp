@@ -39,8 +39,20 @@ struct SC {
     int get_m4() const { return 100; }
 private:
     int m3;
+    // Metadata within the struct
+    /* clang-format off */
+    /* @formatter:off */
+    CXL_BEGIN_REFLECTED(SC, 4)
+        CXL_REFLECTED_MEMBER(0, m1)
+        CXL_REFLECTED_MEMBER(1, m2)
+        CXL_REFLECTED_ATTRIBUTE(2, int, m3, CXL_MEM_GETTER(get_m3), CXL_MEM_SETTER(set_m3))
+        CXL_REFLECTED_RO_ATTRIBUTE(3, int, m4, CXL_MEM_GETTER(get_m4))
+    CXL_END_REFLECTED()
+    /* @formatter:on */
+    /* clang-format on */
 };
 
+// Metadata out of the struct
 /* clang-format off */
 /* @formatter:off */
 CXL_EXT_BEGIN_REFLECTED(S_inner, 1)
@@ -51,12 +63,6 @@ CXL_EXT_BEGIN_REFLECTED(S, 4)
     CXL_REFLECTED_MEMBER(1, m2, CXL_XML_NAMESPACE("somens"))
     CXL_REFLECTED_MEMBER_KEY(2, m3, "MM3")
     CXL_REFLECTED_MEMBER(3, m4)
-CXL_EXT_END_REFLECTED()
-CXL_EXT_BEGIN_REFLECTED(SC, 4)
-    CXL_REFLECTED_MEMBER(0, m1)
-    CXL_REFLECTED_MEMBER(1, m2)
-    CXL_REFLECTED_ATTRIBUTE(2, int, m3, CXL_MEM_GETTER(get_m3), CXL_MEM_SETTER(set_m3))
-    CXL_REFLECTED_RO_ATTRIBUTE(3, int, m4, CXL_MEM_GETTER(get_m4))
 CXL_EXT_END_REFLECTED()
 /* @formatter:on */
 /* clang-format on */
