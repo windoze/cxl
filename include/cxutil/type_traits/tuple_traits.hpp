@@ -91,5 +91,8 @@ struct dedup<std::tuple<T, Types...>> {
                                       typename detail::add_head<T, deduped_tail>::type>::type type;
 };
 
+template<typename T>
+using deduped = typename dedup<T>::type;
+
 } // End of namespace cxutil
 #endif // CXUTIL_TUPLE_TRAITS_HPP

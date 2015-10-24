@@ -17,6 +17,7 @@ if options.inc!=None:
 if options.macro!=None:
 	kept.extend(["-D"+i for i in options.macro])
 
+# TODO:
 clang.cindex.Config.set_library_path("/Library/Developer/CommandLineTools/usr/lib")
 index = clang.cindex.Index(clang.cindex.conf.lib.clang_createIndex(False, True))
 
@@ -36,24 +37,8 @@ tmpl=r"""///////////////////////////////////////////////////////////////////////
 #define ${c.header_guard()}
 
 namespace cxutil { namespace reflection {
-% for m in enumerate(c.members):
-template<>
-struct reflected_element<${m[0]}, ${c.identifier()}> {
-	static constexpr char const *name() { return "${m[1].name}"; };
-	static constexpr char const *key() { return "${m[1].serialization_key}"; };
-	typedef decltype(${c.identifier()}::${m[1].name}) type;
-	static constexpr type &get(${c.identifier()} &d) { return d.${m[1].name}; }
-	static constexpr type &&get(${c.identifier()} &&d) { return std::move(d.${m[1].name}); }
-	static constexpr type const &get(${c.identifier()} const &d) { return d.${m[1].name}; }
-};
-template<>
-struct reflected_element<${m[0]}, const ${c.identifier()}> : public reflected_element<${m[0]}, ${c.identifier()}> {
-	typedef std::add_const<decltype(${c.identifier()}::${m[1].name})>::type type;
-};
-% endfor
 
-template<>
-struct reflected<${c.identifier()}> {
+struct reflected_metadata {
 	static constexpr bool enabled=true;
 	typedef std::tuple<
 		${c.member_identifier_list(prefix="decltype(", postfix=")", sep=",\n\t\t")}
@@ -66,84 +51,21 @@ struct reflected<${c.identifier()}> {
 	static constexpr char const *name() { return "${c.name}"; }
 	static constexpr char const *full_name() { return "${c.identifier()}"; }
 
-	static const std::string &get_annotation(const std::string &key) {
-		static const std::map<std::string, std::string> annotations {
-			% for ann in c.annotations:
-			{"${ann}", "${c.annotations[ann]}"},
-			% endfor
-		};
-		return annotations.at(key);
-	}
-
-	static const std::string &get_attr_annotation(const std::string &name, const std::string &key) {
-		static const std::map<std::string, std::map<std::string, std::string>> attr_annotations {
-			% for m in c.members:
-			{"${m.name}", {
-			% for ann in m.annotations:
-				{"${ann}", "${m.annotations[ann]}"},
-			% endfor
-			}},
-			% endfor
-		};
-		return attr_annotations.at(name).at(key);
-	}
-
-	static void *get_attr_ptr(${c.identifier()} &d, std::size_t N) {
-		switch(N) {
-		% for m in enumerate(c.members):
-			% if not m[1].is_const:
-		case ${m[0]}: return &(d.${m[1].name});
-			% endif
-		% endfor
-		}
-		throw std::out_of_range("reflected<${c.identifier()}>::get_attr_ptr");
-	}
-
-	static const void *get_attr_ptr(const ${c.identifier()} &d, std::size_t N) {
-		switch(N) {
-		% for m in enumerate(c.members):
-			% if not m[1].is_const:
-		case ${m[0]}: return &(d.${m[1].name});
-			% endif
-		% endfor
-		}
-		throw std::out_of_range("reflected<${c.identifier()}>::get_attr_ptr");
-	}
-
-	decltype(auto) static make_tuple(const ${c.identifier()} &d) {
-		return tuple_type(
-			${c.member_name_list(prefix="d.", sep=",\n\t\t\t")}
-		);
-	}
-
-	decltype(auto) static tie(${c.identifier()} &d) {
-		return std::tie(
-			${c.member_name_list(prefix="d.", sep=",\n\t\t\t")}
-		);
-	}
-};
-
-template<>
-struct reflected<const ${c.identifier()}> : public reflected<${c.identifier()}> {
-	typedef std::tuple<
-		${c.member_identifier_list(prefix="std::add_const<decltype(", postfix=")>::type", sep=",\n\t\t")}
-	> tuple_type;
+	template<size_t I, typename> struct element;
+	% for m in enumerate(c.members):
+	template<typename T>
+	struct element<${m[0]}, ${c.identifier()}, T> {
+		static constexpr char const *name() { return "${m[1].name}"; };
+		static constexpr char const *key() { return "${m[1].serialization_key}"; };
+		typedef decltype(${c.identifier()}::${m[1].name}) type;
+		static constexpr type &get(${c.identifier()} &d) { return d.${m[1].name}; }
+		static constexpr type &&get(${c.identifier()} &&d) { return std::move(d.${m[1].name}); }
+		static constexpr type const &get(${c.identifier()} const &d) { return d.${m[1].name}; }
+	};
+	% endfor
 };
 
 }}	// End of namespace cxutil::reflection
-
-namespace std {
-	template<>
-	class tuple_size<${c.identifier()}> { public: static constexpr std::size_t value=cxutil::reflection::reflected<${c.identifier()}>::attr_count; };
-	template<std::size_t I>
-	class tuple_element<I, ${c.identifier()}> : public cxutil::reflection::reflected_element<I, ${c.identifier()}> {};
-	template<std::size_t I>
-	class tuple_element<I, const ${c.identifier()}> : public cxutil::reflection::reflected_element<I, const ${c.identifier()}> {};
-	template<std::size_t I>
-	class tuple_element<I, volatile ${c.identifier()}> : public cxutil::reflection::reflected_element<I, volatile ${c.identifier()}> {};
-	template<std::size_t I>
-	class tuple_element<I, const volatile ${c.identifier()}> : public cxutil::reflection::reflected_element<I, const volatile ${c.identifier()}> {};
-}
 #endif	// !defined(${c.header_guard()})
 % endfor
 
