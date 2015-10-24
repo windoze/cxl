@@ -6,6 +6,103 @@
 #include <tuple>
 #include <cxutil/variant.hpp>
 
+#define CXL_ELEM_OP_IMPL(NAME, FALLBACK)                                                           \
+    template <typename T>                                                                          \
+    class element_has_##NAME##_impl                                                                        \
+    {                                                                                              \
+        struct Fallback {                                                                          \
+            int NAME;                                                                              \
+        };                                                                                         \
+        struct Derived : T, Fallback {                                                             \
+        };                                                                                         \
+        template <typename U, U>                                                                   \
+        struct Check;                                                                              \
+        typedef char ArrayOfOne[1];                                                                \
+        typedef char ArrayOfTwo[2];                                                                \
+        template <typename U>                                                                      \
+        static ArrayOfOne& func(Check<int Fallback::*, &U::NAME>*);                                \
+        template <typename U>                                                                      \
+        static ArrayOfTwo& func(...);                                                              \
+                                                                                                   \
+    public:                                                                                        \
+        typedef element_has_##NAME##_impl type;                                                            \
+        enum { value = sizeof(func<Derived>(0)) == 2 };                                            \
+    };                                                                                             \
+    template <std::size_t I, typename T>                                                           \
+    constexpr bool element_has_##NAME = element_has_##NAME##_impl<reflected_element<I, T>>::value;                 \
+    template <std::size_t I, typename T>                                                           \
+    constexpr std::enable_if_t<element_has_##NAME<I, T>, const char*> get_##NAME()                         \
+    {                                                                                              \
+        return reflected_element<I, T>::NAME();                                                    \
+    }                                                                                              \
+    template <std::size_t I, typename T>                                                           \
+    constexpr std::enable_if_t<!element_has_##NAME<I, T>, const char*> get_##NAME()                        \
+    {                                                                                              \
+        return FALLBACK;                                                                           \
+    }                                                                                              \
+    template <std::size_t I, std::size_t N, typename T>                                            \
+    struct NAME##_getter {                                                                         \
+        const char* operator()(size_t n) const                                                     \
+        {                                                                                          \
+            if (I == n) {                                                                          \
+                return get_##NAME<I, T>();                                                         \
+            }                                                                                      \
+            return NAME##_getter<I + 1, N, T>()(n);                                                \
+        }                                                                                          \
+    };                                                                                             \
+    template <std::size_t N, typename T>                                                           \
+    struct NAME##_getter<N, N, T> {                                                                \
+        template <typename... U>                                                                   \
+        const char* operator()(U...) const                                                         \
+        {                                                                                          \
+            throw std::out_of_range("reflected_getter");                                           \
+        }                                                                                          \
+    };
+
+#define CXL_ELEM_OP_FUNC(NAME)                                                                     \
+    template <typename T>                                                                          \
+    const char* get_element_##NAME(std::size_t n)                                                  \
+    {                                                                                              \
+        return detail::NAME##_getter<0, tuple_size<T>::value, T>()(n);                             \
+    }
+
+#define CXL_OP_IMPL(NAME)                                                                          \
+    template <typename T>                                                                          \
+    class has_##NAME##_impl                                                                        \
+    {                                                                                              \
+        struct Fallback {                                                                          \
+            int NAME;                                                                              \
+        };                                                                                         \
+        struct Derived : T, Fallback {                                                             \
+        };                                                                                         \
+        template <typename U, U>                                                                   \
+        struct Check;                                                                              \
+        typedef char ArrayOfOne[1];                                                                \
+        typedef char ArrayOfTwo[2];                                                                \
+        template <typename U>                                                                      \
+        static ArrayOfOne& func(Check<int Fallback::*, &U::NAME>*);                                \
+        template <typename U>                                                                      \
+        static ArrayOfTwo& func(...);                                                              \
+                                                                                                   \
+    public:                                                                                        \
+        typedef has_##NAME##_impl type;                                                            \
+        enum { value = sizeof(func<Derived>(0)) == 2 };                                            \
+    };                                                                                             \
+    template <typename T>                                                                          \
+    constexpr bool has_##NAME = has_##NAME##_impl<reflected<T>>::value;
+
+#define CXL_OP_FUNC(NAME, FALLBACK)                                                                \
+    template <typename T>                                                                          \
+    constexpr std::enable_if_t<detail::has_##NAME<T>, const char*> get_##NAME()                    \
+    {                                                                                              \
+        return reflected<T>::NAME();                                                               \
+    }                                                                                              \
+    template <typename T>                                                                          \
+    constexpr std::enable_if_t<!detail::has_##NAME<T>, const char*> get_##NAME()                   \
+    {                                                                                              \
+        return FALLBACK;                                                                           \
+    }
+
 namespace cxutil
 {
 namespace reflection
@@ -402,6 +499,7 @@ namespace reflection
                 throw std::out_of_range("reflected_getter");
             }
         };
+
         template <std::size_t I, std::size_t N, typename T>
         struct reflected_setter {
             typedef to_variant_t<T> Variant;
@@ -481,20 +579,58 @@ namespace reflection
         };
 
         template <std::size_t I, std::size_t N, typename T>
-        struct member_name_visitor {
-            template <typename F>
-            void operator()(const T& t, F&& f) const
+        struct name_getter {
+            const char* operator()(size_t n) const
             {
-                f(t, I, reflected_element<I, T>::name());
-                member_name_visitor<I + 1, N, T>()(t, std::forward<F>(f));
+                if (I == n) {
+                    return reflected_element<I, T>::name();
+                }
+                return name_getter<I + 1, N, T>()(n);
+            }
+
+            const char* operator()(const std::string& n) const
+            {
+                if (n == reflected_element<I, T>::key()) {
+                    return reflected_element<I, T>::name();
+                }
+                return name_getter<I + 1, N, T>()(n);
             }
         };
 
         template <std::size_t N, typename T>
-        struct member_name_visitor<N, N, T> {
-            template <typename F>
-            void operator()(const T& t, F&& f) const
+        struct name_getter<N, N, T> {
+            template <typename... U>
+            const char* operator()(U...) const
             {
+                throw std::out_of_range("reflected_getter");
+            }
+        };
+
+        template <std::size_t I, std::size_t N, typename T>
+        struct key_getter {
+            const char* operator()(size_t n) const
+            {
+                if (I == n) {
+                    return reflected_element<I, T>::key();
+                }
+                return key_getter<I + 1, N, T>()(n);
+            }
+
+            const char* operator()(const std::string& n) const
+            {
+                if (n == reflected_element<I, T>::key()) {
+                    return reflected_element<I, T>::key_getter();
+                }
+                return key_getter<I + 1, N, T>()(n);
+            }
+        };
+
+        template <std::size_t N, typename T>
+        struct key_getter<N, N, T> {
+            template <typename... U>
+            const char* operator()(U...) const
+            {
+                throw std::out_of_range("reflected_getter");
             }
         };
 
@@ -515,6 +651,19 @@ namespace reflection
             {
             }
         };
+
+        CXL_OP_IMPL(sql_table)
+        CXL_OP_IMPL(xml_namespace)
+        CXL_OP_IMPL(xml_node)
+
+        // sql_field() fallbacks to key()
+        CXL_ELEM_OP_IMPL(sql_field, (reflected_element<I, T>::key()))
+        // json_key() fallbacks to key()
+        CXL_ELEM_OP_IMPL(json_key, (reflected_element<I, T>::key()))
+        // xml_node() fallbacks to key()
+        CXL_ELEM_OP_IMPL(xml_node, (reflected_element<I, T>::key()))
+        // xml_namespace() fallbacks to ""
+        CXL_ELEM_OP_IMPL(xml_namespace, "")
     }
 
     template <typename T>
@@ -565,17 +714,31 @@ namespace reflection
         detail::reflected_setter<0, tuple_size<T>::value, T>()(t, std::move(e), n);
     }
 
-    template <typename T, typename F>
-    std::enable_if_t<reflectable<T>, void> for_each_member_key(const T& t, F&& f)
+    template <typename T>
+    const char* get_name()
     {
-        detail::member_key_visitor<0, tuple_size<T>::value, T>()(t, std::forward<F>(f));
+        return reflected<T>::name();
     }
 
-    template <typename T, typename F>
-    std::enable_if_t<reflectable<T>, void> for_each_member_name(const T& t, F&& f)
+    template <typename T>
+    const char* get_element_name(std::size_t n)
     {
-        detail::member_name_visitor<0, tuple_size<T>::value, T>()(t, std::forward<F>(f));
+        return detail::name_getter<0, tuple_size<T>::value, T>()(n);
     }
+
+    template <typename T>
+    const char* get_element_key(std::size_t n)
+    {
+        return detail::key_getter<0, tuple_size<T>::value, T>()(n);
+    }
+
+    CXL_OP_FUNC(sql_table, (reflected<T>::name()))
+    CXL_OP_FUNC(xml_node, (reflected<T>::name()))
+    CXL_OP_FUNC(xml_namespace, "")
+    CXL_ELEM_OP_FUNC(sql_field)
+    CXL_ELEM_OP_FUNC(json_key)
+    CXL_ELEM_OP_FUNC(xml_node)
+    CXL_ELEM_OP_FUNC(xml_namespace)
 } // End of namespace cxutil::reflection
 using reflection::reflectable;
 using reflection::to_variant_t;
@@ -584,8 +747,16 @@ using reflection::tuple_element;
 using reflection::get_variant;
 using reflection::get;
 using reflection::set;
-using reflection::for_each_member_name;
-using reflection::for_each_member_key;
+using reflection::get_name;
+using reflection::get_sql_table;
+using reflection::get_xml_node;
+using reflection::get_xml_namespace;
+using reflection::get_element_name;
+using reflection::get_element_key;
+using reflection::get_element_sql_field;
+using reflection::get_element_json_key;
+using reflection::get_element_xml_node;
+using reflection::get_element_xml_namespace;
 } // End of namespace cxutil
 
 namespace std

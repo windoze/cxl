@@ -3,10 +3,23 @@
 
 #include <cxutil/reflection/reflection_impl.hpp>
 
+#define CXL_PP_CONCAT9(a, b, c, d, e, f, g, h, i) a b c d e f g h i
+#define CXL_PP_CONCAT8(a, b, c, d, e, f, g, h) a b c d e f g h
+#define CXL_PP_CONCAT7(a, b, c, d, e, f, g) a b c d e f g
+#define CXL_PP_CONCAT6(a, b, c, d, e, f) a b c d e f
+#define CXL_PP_CONCAT5(a, b, c, d, e) a b c d e
+#define CXL_PP_CONCAT4(a, b, c, d) a b c d
+#define CXL_PP_CONCAT3(a, b, c) a b c
+#define CXL_PP_CONCAT2(a, b) a b
+#define CXL_PP_CONCAT1(a) a
+#define CXL_PP_GET_OVERRIDE(_1, _2, _3, _4, _5, _6, _7, _8, _9, NAME, ...) NAME
+#define CXL_PP_CONCAT(...)                                                                         \
+    CXL_PP_GET_OVERRIDE(__VA_ARGS__, CXL_PP_CONCAT9, CXL_PP_CONCAT8, CXL_PP_CONCAT7, CXL_PP_CONCAT6, CXL_PP_CONCAT5, CXL_PP_CONCAT4, CXL_PP_CONCAT3, CXL_PP_CONCAT2, CXL_PP_CONCAT1)(__VA_ARGS__)
+
 #define CXL_BEGIN_REFLECTED(TYPE, COUNT, ARGS...)                                                  \
 public:                                                                                            \
     struct cxl_reflected_metadata {                                                                \
-        ARGS;                                                                                      \
+        CXL_PP_CONCAT(ARGS);                                                                       \
         static constexpr bool enabled = true;                                                      \
         typedef TYPE owner_type;                                                                   \
         static constexpr char const* name() { return #TYPE; }                                      \
@@ -28,7 +41,7 @@ public:                                                                         
         {                                                                                          \
             template <>                                                                            \
             struct cxl_reflected_metadata<TYPE> {                                                  \
-                ARGS;                                                                              \
+                CXL_PP_CONCAT(ARGS);                                                               \
                 static constexpr bool enabled = true;                                              \
                 typedef TYPE owner_type;                                                           \
                 static constexpr char const* name() { return #TYPE; }                              \
@@ -36,7 +49,7 @@ public:                                                                         
                 template <size_t I, typename Unused>                                               \
                 struct element;
 #define CXL_EXT_END_REFLECTED(ARGS...)                                                             \
-    ARGS;                                                                                          \
+    CXL_PP_CONCAT(ARGS);                                                                           \
     }                                                                                              \
     ;                                                                                              \
     }                                                                                              \
@@ -69,7 +82,7 @@ public:                                                                         
         {                                                                                          \
             d.NAME = std::forward<V>(v);                                                           \
         }                                                                                          \
-        ARGS;                                                                                      \
+        CXL_PP_CONCAT(ARGS);                                                                       \
     };
 
 #define CXL_REFLECTED_MEMBER_KEY(INDEX, NAME, KEY, ARGS...)                                        \
@@ -98,7 +111,7 @@ public:                                                                         
         {                                                                                          \
             d.NAME = std::forward<V>(v);                                                           \
         }                                                                                          \
-        ARGS;                                                                                      \
+        CXL_PP_CONCAT(ARGS);                                                                       \
     };
 
 #define CXL_REFLECTED_RO_MEMBER(INDEX, NAME, ARGS...)                                              \
@@ -110,7 +123,7 @@ public:                                                                         
         static constexpr char const* name() { return #NAME; }                                      \
         static constexpr char const* key() { return #NAME; }                                       \
         static constexpr type const& get(owner_type const& d) { return d.NAME; }                   \
-        ARGS;                                                                                      \
+        CXL_PP_CONCAT(ARGS);                                                                       \
     };
 
 #define CXL_REFLECTED_RO_MEMBER_KEY(INDEX, NAME, KEY, ARGS...)                                     \
@@ -122,7 +135,7 @@ public:                                                                         
         static constexpr char const* name() { return #NAME; }                                      \
         static constexpr char const* key() { return KEY; }                                         \
         static constexpr type const& get(owner_type const& d) { return d.NAME; }                   \
-        ARGS;                                                                                      \
+        CXL_PP_CONCAT(ARGS);                                                                       \
     };
 
 // Use like: CXL_REFLECTED_ATTRIBUTE(3, int, attr4, CXL_MEM_GETTER(get_attr4),
@@ -141,7 +154,7 @@ public:                                                                         
         {                                                                                          \
             SETTER;                                                                                \
         }                                                                                          \
-        ARGS;                                                                                      \
+        CXL_PP_CONCAT(ARGS);                                                                       \
     };
 
 #define CXL_REFLECTED_ATTRIBUTE_KEY(INDEX, TYPE, NAME, KEY, GETTER, SETTER, ARGS...)               \
@@ -158,7 +171,7 @@ public:                                                                         
         {                                                                                          \
             SETTER;                                                                                \
         }                                                                                          \
-        ARGS;                                                                                      \
+        CXL_PP_CONCAT(ARGS);                                                                       \
     };
 
 #define CXL_REFLECTED_RO_ATTRIBUTE(INDEX, TYPE, NAME, GETTER, ARGS...)                             \
@@ -170,7 +183,7 @@ public:                                                                         
         static constexpr char const* name() { return #NAME; }                                      \
         static constexpr char const* key() { return #NAME; }                                       \
         static constexpr type get(owner_type const& d) { return GETTER; }                          \
-        ARGS;                                                                                      \
+        CXL_PP_CONCAT(ARGS);                                                                       \
     };
 
 #define CXL_REFLECTED_RO_ATTRIBUTE_KEY(INDEX, TYPE, NAME, KEY, GETTER, ARGS...)                    \
@@ -182,7 +195,7 @@ public:                                                                         
         static constexpr char const* name() { return #NAME; }                                      \
         static constexpr char const* key() { return KEY; }                                         \
         static constexpr type get(owner_type const& d) { return GETTER; }                          \
-        ARGS;                                                                                      \
+        CXL_PP_CONCAT(ARGS);                                                                       \
     };
 
 #define CXL_MEM_GETTER(GETTER) d.GETTER()
@@ -191,10 +204,14 @@ public:                                                                         
 #define CXL_ATTR(NAME, VALUE)                                                                      \
     static constexpr char const* NAME() { return VALUE; }
 
+#define CXL_SQL_TABLE(X) CXL_ATTR(sql_table, X)
+
+#define CXL_JSON_KEY(X) CXL_ATTR(json_key, X)
+
+#define CXL_XML_NODE(X) CXL_ATTR(xml_node, X)
+
 #define CXL_XML_NAMESPACE(X) CXL_ATTR(xml_namespace, X)
 
-#define CXL_SQL_FIELD(x) CXL_ATTR(sql_field, X)
-
-#define CXL_SQL_TYPE(x) CXL_ATTR(sql_type, X)
+#define CXL_SQL_FIELD(X) CXL_ATTR(sql_field, X)
 
 #endif // !defined(CXUTIL_REFLECTION_HPP)
