@@ -311,7 +311,7 @@ struct visitor
     visitor(std::ostream &s) : os(s) { }
 
     template<typename T>
-    void operator()(T &&t) const
+    void operator()(const T &t) const
     {
         os << t << std::endl;
     }
@@ -450,7 +450,7 @@ void test_reflected()
 
     std::stringstream ss;
     visitor v(ss);
-    cxl::for_each_member(sc, v);
+    cxl::for_each_element(sc, v);
     assert(ss.str() == "42\n"
             "5.5\n"
             "168\n"

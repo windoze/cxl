@@ -789,8 +789,8 @@ namespace cxl {
         };
 
         template<typename T, typename V>
-        void for_each_member(T &&t, V &&v) {
-            static_assert(reflectable<unref<T>>, "for_each_member only supports reflectable types.");
+        void for_each_element(T &&t, V &&v) {
+            static_assert(reflectable<unref<T>>, "for_each_element only supports reflectable types.");
             detail::member_enumerator<0, tuple_size<unref<T>>::value>()(std::forward<T>(t), std::forward<V>(v));
         };
 
@@ -828,7 +828,7 @@ namespace cxl {
     using reflection::get_element_xml_node;
     using reflection::get_element_xml_namespace;
     using reflection::get_element_csv_field;
-    using reflection::for_each_member;
+    using reflection::for_each_element;
 } // End of namespace cxl
 
 namespace std {
