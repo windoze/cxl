@@ -185,7 +185,7 @@ namespace cxl {
 
                     template<typename Owner>
                     static std::enable_if_t<!std::is_const<typename Owner::first_type>::value,
-                                                      type> &
+                                            type> &
                     get(Owner &d)
                     {
                         return d.first;
@@ -193,7 +193,7 @@ namespace cxl {
 
                     template<typename Owner>
                     static std::enable_if_t<!std::is_const<typename Owner::first_type>::value,
-                                                      type> &&
+                                            type> &&
                     get(Owner &&d)
                     {
                         return std::move(d.first);
@@ -270,7 +270,7 @@ namespace cxl {
 
                     template<typename Owner>
                     static std::enable_if_t<!std::is_const<typename Owner::value_type>::value,
-                                                      type> &
+                                            type> &
                     get(owner_type &d)
                     {
                         return std::get<I>(d);
@@ -278,7 +278,7 @@ namespace cxl {
 
                     template<typename Owner>
                     static std::enable_if_t<!std::is_const<typename Owner::value_type>::value,
-                                                      type> &&
+                                            type> &&
                     get(owner_type &&d)
                     {
                         return std::get<I>(std::move(d));
@@ -378,7 +378,7 @@ namespace cxl {
             struct to_variant<std::tuple<T...>>
             {
                 // Need to dedup as variant with more than one same subtype may cause problem
-                typedef deduped<variant<unrefcv < T>...>> type;
+                typedef deduped<variant < unrefcv < T>...>> type;
             };
 
             template<typename T>
@@ -770,6 +770,30 @@ namespace cxl {
             return detail::key_getter<0, tuple_size<T>::value, T>()(n);
         }
 
+        namespace detail {
+            template<std::size_t I, std::size_t N>
+            struct member_enumerator
+            {
+                template<typename T, typename V>
+                void operator()(T &&t, V &&v) const {
+                    v(reflected_element<I, unref<T>>::get(std::forward<T>(t)));
+                    member_enumerator<I+1, N>()(std::forward<T>(t), std::forward<V>(v));
+                }
+            };
+            template<std::size_t N>
+            struct member_enumerator<N, N> {
+                template<typename T, typename V>
+                void operator()(T &&t, V &&v) const {
+                }
+            };
+        };
+
+        template<typename T, typename V>
+        void for_each_member(T &&t, V &&v) {
+            static_assert(reflectable<unref<T>>, "for_each_member only supports reflectable types.");
+            detail::member_enumerator<0, tuple_size<unref<T>>::value>()(std::forward<T>(t), std::forward<V>(v));
+        };
+
         CXL_OP_FUNC(sql_table, (reflected<T>::name()))
 
         CXL_OP_FUNC(xml_node, (reflected<T>::name()))
@@ -804,6 +828,7 @@ namespace cxl {
     using reflection::get_element_xml_node;
     using reflection::get_element_xml_namespace;
     using reflection::get_element_csv_field;
+    using reflection::for_each_member;
 } // End of namespace cxl
 
 namespace std {

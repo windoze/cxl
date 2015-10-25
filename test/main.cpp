@@ -306,6 +306,19 @@ void test_filebuf()
 
 #include "main.hpp"
 
+struct visitor
+{
+    visitor(std::ostream &s) : os(s) { }
+
+    template<typename T>
+    void operator()(T &&t) const
+    {
+        os << t << std::endl;
+    }
+
+    std::ostream &os;
+};
+
 void test_reflected()
 {
     S s{420, 4.2, "hello", {4200}};
@@ -434,6 +447,14 @@ void test_reflected()
     assert(cxl::get<int>(2, sc) == 168);
     assert(cxl::get<int>(3, sc) == 100);
     assert(std::get<3>(sc) == 100);
+
+    std::stringstream ss;
+    visitor v(ss);
+    cxl::for_each_member(sc, v);
+    assert(ss.str() == "42\n"
+            "5.5\n"
+            "168\n"
+            "100\n");
 }
 
 void test_csv()
