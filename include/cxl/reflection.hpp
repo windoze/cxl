@@ -14,7 +14,18 @@
 #define CXL_PP_CONCAT1(a) a
 #define CXL_PP_GET_OVERRIDE(_1, _2, _3, _4, _5, _6, _7, _8, _9, NAME, ...) NAME
 #define CXL_PP_CONCAT(...)                                                                         \
-    CXL_PP_GET_OVERRIDE(__VA_ARGS__, CXL_PP_CONCAT9, CXL_PP_CONCAT8, CXL_PP_CONCAT7, CXL_PP_CONCAT6, CXL_PP_CONCAT5, CXL_PP_CONCAT4, CXL_PP_CONCAT3, CXL_PP_CONCAT2, CXL_PP_CONCAT1)(__VA_ARGS__)
+    CXL_PP_GET_OVERRIDE (                                                                          \
+        __VA_ARGS__,                                                                               \
+        CXL_PP_CONCAT9,                                                                            \
+        CXL_PP_CONCAT8,                                                                            \
+        CXL_PP_CONCAT7,                                                                            \
+        CXL_PP_CONCAT6,                                                                            \
+        CXL_PP_CONCAT5,                                                                            \
+        CXL_PP_CONCAT4,                                                                            \
+        CXL_PP_CONCAT3,                                                                            \
+        CXL_PP_CONCAT2,                                                                            \
+        CXL_PP_CONCAT1                                                                             \
+    )(__VA_ARGS__)
 
 #define CXL_BEGIN_REFLECTED(TYPE, COUNT, ARGS...)                                                  \
 public:                                                                                            \
@@ -23,35 +34,29 @@ public:                                                                         
         static constexpr bool enabled = true;                                                      \
         typedef TYPE owner_type;                                                                   \
         static constexpr char const* name() { return #TYPE; }                                      \
-        static constexpr std::size_t element_count = COUNT;                                        \
-        template <size_t I, typename Unused>                                                       \
-        struct element;
+        static constexpr unsigned long element_count = COUNT;                                      \
+        template <unsigned long I, typename Unused> struct element;
+
 #define CXL_END_REFLECTED(ARGS...)                                                                 \
-    ARGS;                                                                                          \
-    }                                                                                              \
-    ;
+        CXL_PP_CONCAT(ARGS);                                                                       \
+    };
 
 // Can be used out of struct, must be put in global namespace
 #define CXL_EXT_BEGIN_REFLECTED(TYPE, COUNT, ARGS...)                                              \
-    namespace cxl                                                                               \
-    {                                                                                              \
-    namespace reflection                                                                           \
-    {                                                                                              \
-        namespace metadata_store                                                                   \
-        {                                                                                          \
-            template <>                                                                            \
-            struct cxl_reflected_metadata<TYPE> {                                                  \
-                CXL_PP_CONCAT(ARGS);                                                               \
-                static constexpr bool enabled = true;                                              \
-                typedef TYPE owner_type;                                                           \
-                static constexpr char const* name() { return #TYPE; }                              \
-                static constexpr unsigned long element_count = COUNT;                              \
-                template <size_t I, typename Unused>                                               \
-                struct element;
+    namespace cxl { namespace reflection { namespace metadata_store {                              \
+        template <>                                                                                \
+        struct cxl_reflected_metadata<TYPE> {                                                      \
+            CXL_PP_CONCAT(ARGS);                                                                   \
+            static constexpr bool enabled = true;                                                  \
+            typedef TYPE owner_type;                                                               \
+            static constexpr char const* name() { return #TYPE; }                                  \
+            static constexpr unsigned long element_count = COUNT;                                  \
+            template <unsigned long I, typename Unused>                                            \
+            struct element;
+
 #define CXL_EXT_END_REFLECTED(ARGS...)                                                             \
-    CXL_PP_CONCAT(ARGS);                                                                           \
-    }                                                                                              \
-    ;                                                                                              \
+            CXL_PP_CONCAT(ARGS);                                                                   \
+        };                                                                                         \
     }}} /* End of namespace cxl::reflection::metadata_store */
 
 #define CXL_REFLECTED_MEMBER(INDEX, NAME, ARGS...)                                                 \
@@ -63,23 +68,15 @@ public:                                                                         
         static constexpr char const* name() { return #NAME; }                                      \
         static constexpr char const* key() { return #NAME; }                                       \
         template <typename Owner>                                                                  \
-        static constexpr std::enable_if_t<!std::is_const<decltype(Owner::NAME)>::value, type>&     \
-        get(Owner& d)                                                                              \
-        {                                                                                          \
-            return d.NAME;                                                                         \
-        }                                                                                          \
+        static std::enable_if_t<!std::is_const<decltype(Owner::NAME)>::value, type>&               \
+        get(Owner& d) { return d.NAME; }                                                           \
         template <typename Owner>                                                                  \
-        static constexpr std::enable_if_t<!std::is_const<decltype(Owner::NAME)>::value, type>&&    \
-        get(Owner&& d)                                                                             \
-        {                                                                                          \
-            return static_cast<type&&>(d.NAME);                                                    \
-        }                                                                                          \
-        static constexpr type const& get(owner_type const& d) { return d.NAME; }                   \
+        static std::enable_if_t<!std::is_const<decltype(Owner::NAME)>::value, type>&&              \
+        get(Owner&& d) { return static_cast<type&&>(d.NAME); }                                     \
+        static type const& get(owner_type const& d) { return d.NAME; }                             \
         template <typename Owner, typename V>                                                      \
         static std::enable_if_t<!std::is_const<decltype(Owner::NAME)>::value> set(Owner& d, V&& v) \
-        {                                                                                          \
-            d.NAME = std::forward<V>(v);                                                           \
-        }                                                                                          \
+        { d.NAME = std::forward<V>(v); }                                                           \
         CXL_PP_CONCAT(ARGS);                                                                       \
     };
 
@@ -92,23 +89,15 @@ public:                                                                         
         static constexpr char const* name() { return #NAME; }                                      \
         static constexpr char const* key() { return KEY; }                                         \
         template <typename Owner>                                                                  \
-        static constexpr std::enable_if_t<!std::is_const<decltype(Owner::NAME)>::value, type>&     \
-        get(Owner& d)                                                                              \
-        {                                                                                          \
-            return d.NAME;                                                                         \
-        }                                                                                          \
+        static std::enable_if_t<!std::is_const<decltype(Owner::NAME)>::value, type>&               \
+        get(Owner& d) { return d.NAME; }                                                           \
         template <typename Owner>                                                                  \
-        static constexpr std::enable_if_t<!std::is_const<decltype(Owner::NAME)>::value, type>&&    \
-        get(Owner&& d)                                                                             \
-        {                                                                                          \
-            return static_cast<type&&>(d.NAME);                                                    \
-        }                                                                                          \
-        static constexpr type const& get(owner_type const& d) { return d.NAME; }                   \
+        static std::enable_if_t<!std::is_const<decltype(Owner::NAME)>::value, type>&&              \
+        get(Owner&& d) { return static_cast<type&&>(d.NAME); }                                     \
+        static type const& get(owner_type const& d) { return d.NAME; }                             \
         template <typename Owner, typename V>                                                      \
         static std::enable_if_t<!std::is_const<decltype(Owner::NAME)>::value> set(Owner& d, V&& v) \
-        {                                                                                          \
-            d.NAME = std::forward<V>(v);                                                           \
-        }                                                                                          \
+        { d.NAME = std::forward<V>(v); }                                                           \
         CXL_PP_CONCAT(ARGS);                                                                       \
     };
 
@@ -120,7 +109,7 @@ public:                                                                         
         typedef decltype(owner_type::NAME) type;                                                   \
         static constexpr char const* name() { return #NAME; }                                      \
         static constexpr char const* key() { return #NAME; }                                       \
-        static constexpr type const& get(owner_type const& d) { return d.NAME; }                   \
+        static type const& get(owner_type const& d) { return d.NAME; }                             \
         CXL_PP_CONCAT(ARGS);                                                                       \
     };
 
@@ -132,7 +121,7 @@ public:                                                                         
         typedef decltype(owner_type::NAME) type;                                                   \
         static constexpr char const* name() { return #NAME; }                                      \
         static constexpr char const* key() { return KEY; }                                         \
-        static constexpr type const& get(owner_type const& d) { return d.NAME; }                   \
+        static type const& get(owner_type const& d) { return d.NAME; }                             \
         CXL_PP_CONCAT(ARGS);                                                                       \
     };
 
@@ -146,12 +135,8 @@ public:                                                                         
         typedef TYPE type;                                                                         \
         static constexpr char const* name() { return #NAME; }                                      \
         static constexpr char const* key() { return #NAME; }                                       \
-        static constexpr type get(owner_type const& d) { return GETTER; }                          \
-        template <typename V>                                                                      \
-        static void set(owner_type& d, V&& v)                                                      \
-        {                                                                                          \
-            SETTER;                                                                                \
-        }                                                                                          \
+        static type get(owner_type const& d) { return GETTER; }                                    \
+        template <typename V> static void set(owner_type& d, V&& v) { SETTER; }                    \
         CXL_PP_CONCAT(ARGS);                                                                       \
     };
 
@@ -163,12 +148,8 @@ public:                                                                         
         typedef TYPE type;                                                                         \
         static constexpr char const* name() { return #NAME; }                                      \
         static constexpr char const* key() { return KEY; }                                         \
-        static type get(owner_type const& d) { return GETTER; }                          \
-        template <typename V>                                                                      \
-        static void set(owner_type& d, V&& v)                                                      \
-        {                                                                                          \
-            SETTER;                                                                                \
-        }                                                                                          \
+        static type get(owner_type const& d) { return GETTER; }                                    \
+        template <typename V> static void set(owner_type& d, V&& v) { SETTER; }                    \
         CXL_PP_CONCAT(ARGS);                                                                       \
     };
 
@@ -180,7 +161,7 @@ public:                                                                         
         typedef typename std::add_const<TYPE>::type type;                                          \
         static constexpr char const* name() { return #NAME; }                                      \
         static constexpr char const* key() { return #NAME; }                                       \
-        static type get(owner_type const& d) { return GETTER; }                          \
+        static type get(owner_type const& d) { return GETTER; }                                    \
         CXL_PP_CONCAT(ARGS);                                                                       \
     };
 
@@ -192,15 +173,14 @@ public:                                                                         
         typedef typename std::add_const<TYPE>::type type;                                          \
         static constexpr char const* name() { return #NAME; }                                      \
         static constexpr char const* key() { return KEY; }                                         \
-        static type get(owner_type const& d) { return GETTER; }                          \
+        static type get(owner_type const& d) { return GETTER; }                                    \
         CXL_PP_CONCAT(ARGS);                                                                       \
     };
 
 #define CXL_MEM_GETTER(GETTER) d.GETTER()
 #define CXL_MEM_SETTER(SETTER) d.SETTER(std::forward<V>(v))
 
-#define CXL_ATTR(NAME, VALUE)                                                                      \
-    static constexpr char const* NAME() { return VALUE; }
+#define CXL_ATTR(NAME, VALUE) static constexpr char const* NAME() { return VALUE; }
 
 #define CXL_SQL_TABLE(X) CXL_ATTR(sql_table, X)
 
