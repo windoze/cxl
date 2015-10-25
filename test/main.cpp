@@ -370,8 +370,8 @@ void test_reflected()
         if(!keys.empty()) keys+=", ";
         keys+=get_element_sql_field<S>(i);
     }
-    keys = "SELECT " + keys + " FROM " + cxutil::reflection::reflected<S>::sql_table() + " WHERE "
-           + cxutil::reflection::reflected_element<0, S>::key() + "=?";
+    keys = "SELECT " + keys + " FROM " + cxutil::get_sql_table<S>() + " WHERE "
+           + cxutil::get_element_sql_field<S>(0) + "=?";
     assert(keys == "SELECT m1, field2, MM3, m4 FROM some_table WHERE m1=?");
 
     // Test with std::tuple
