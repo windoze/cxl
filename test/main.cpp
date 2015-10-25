@@ -436,7 +436,8 @@ void test_reflected()
     assert(std::get<3>(sc) == 100);
 }
 
-void test_csv() {
+void test_csv()
+{
     std::vector<SC> vsc;
     vsc.push_back(SC{10, 5.5, 84});
     vsc.push_back(SC{20, 15.5, 284});
@@ -445,7 +446,7 @@ void test_csv() {
     std::stringstream ss;
     std::ostream_iterator<char> oi(ss);
     cxl::reflection::csv::write_csv(vsc.begin(), vsc.end(), oi);
-    assert(ss.str()=="\"m1\",\"m2\",\"m3\",\"m4\"\n"
+    assert(ss.str() == "\"m1\",\"m2\",\"m3\",\"m4\"\n"
             "10,5.500000,84,100\n"
             "20,15.500000,284,100\n"
             "30,25.500000,384,100\n"
