@@ -1,7 +1,7 @@
-cxxstuff
+CXL: C++ eXtended Library
 ========
 
-Some C++ utilities
+CXL is a supplemental library to the standard C++ library(STL).
 
 * `function_traits` include `arity`, `result_type` and `arg<N>`, also defined `arguments_tuple` that contains all argument types
 * `make_function` creates std::function wrapper that matches the original function signature
@@ -35,12 +35,12 @@ Some C++ utilities
     - `CXL_REFLECTED_RO_ATTRIBUTE` same as `CXL_REFLECTED_ATTRIBUTE`, but the member is readonly.
     - `CXL_REFLECTED_RO_ATTRIBUTE_KEY` same as `CXL_REFLECTED_ATTRIBUTE_KEY`, but the member is readonly.
 * After metadata are defined, reflection support is added to the type:
-    - `constexpr bool cxl::reflectable<T>` is true if T supports reflection, all types with metadata defined are supports, also `std::tuple`, `std::pair`, and `std::array` are supported.
-    - `to_variant_t<T>` is the corresponding `variant` type, used to dynamically access all members in T.
+    - `constexpr bool cxl::reflectable<T>` is true if T supports reflection, all types with metadata defined do, as well as `std::tuple`, `std::pair`, and `std::array`.
+    - `to_variant_t<T>` is the corresponding `variant` type, which includes types of all attributes of `T`, used to dynamically access all members in T.
     - `tuple_size<T>` same as `std::tuple_size<T>`, but also supports reflectable types.
     - `tuple_element<I, T>` same as `std::tuple_element<I, T>`, but also supports reflectable types.
     - `get_variant<T>(i, t)` returns a `variant` contains the `i`-th memeber of `t`.
-    - `get<Type>(i, t)` return the `i`-th member of `t` in type `Type`, if the `Type` is not the actual type of the member, a `std::bad_cast` exception will be thrown.
+    - `get<Type>(i, t)` return the `i`-th member of `t` with type `Type`, if the `Type` is not the actual type of the member, a `std::bad_cast` exception will be thrown.
     - `set(i, t, v)` set the `i`-th member of `t` to `v`, if the type of `v` is not the actual type of the member, or the member is readonly, a `std::bad_cast` exception will be thrown.
     - `const char *get_name<T>()` return the name recorded in metadata of `T`.
     - `const char *get_sql_table<T>()` return the `sql_table()` attribute of `T`, returns to `name()` if the attribute doesn't exist.
