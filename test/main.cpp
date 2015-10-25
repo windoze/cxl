@@ -1,19 +1,21 @@
 #include <assert.h>
 #include <iostream>
 #include <sstream>
-#include <cxutil/variant.hpp>
-#include <cxutil/type_traits.hpp>
-#include <cxutil/stdio_filebuf.hpp>
-#include <cxutil/str_lit.hpp>
 #include <fcntl.h>
-#include <cxutil/reflection.hpp>
+#include <vector>
+#include <cxl/variant.hpp>
+#include <cxl/type_traits.hpp>
+#include <cxl/stdio_filebuf.hpp>
+#include <cxl/str_lit.hpp>
+#include <cxl/reflection.hpp>
+#include <cxl/reflection/csv.hpp>
 
 #define STRINGIZE(x) STRINGIZE2(x)
 #define STRINGIZE2(x) #x
 #define LINE_STRING STRINGIZE(__LINE__)
 #define POS __FILE__ ":" LINE_STRING
 
-using namespace cxutil;
+using namespace cxl;
 
 // is_same
 
@@ -27,40 +29,40 @@ static_assert(!is_same<int, int, double, int>, POS);
 static_assert(!is_same<double, int, int, int>, POS);
 
 // unref
-static_assert(is_same<unref<int&>, int>, POS);
-static_assert(is_same<unref<const int&>, int const>, POS);
+static_assert(is_same<unref<int &>, int>, POS);
+static_assert(is_same<unref<const int &>, int const>, POS);
 static_assert(is_same<unref<int>, int>, POS);
-static_assert(!is_same<unref<int*>, int>, POS);
+static_assert(!is_same<unref<int *>, int>, POS);
 
 // uncv
 static_assert(is_same<uncv<int const>, int>, POS);
-static_assert(is_same<uncv<const int&>, const int&>, POS);
+static_assert(is_same<uncv<const int &>, const int &>, POS);
 static_assert(is_same<uncv<int>, int>, POS);
-static_assert(is_same<uncv<int&>, int&>, POS);
-static_assert(is_same<uncv<const int*>, const int*>, POS);
-static_assert(is_same<uncv<int* const>, int*>, POS);
-static_assert(is_same<uncv<const int* const>, const int*>, POS);
+static_assert(is_same<uncv<int &>, int &>, POS);
+static_assert(is_same<uncv<const int *>, const int *>, POS);
+static_assert(is_same<uncv<int *const>, int *>, POS);
+static_assert(is_same<uncv<const int *const>, const int *>, POS);
 
 // unrefcv
 static_assert(is_same<unrefcv<int const>, int>, POS);
-static_assert(is_same<unrefcv<const int&>, int>, POS);
+static_assert(is_same<unrefcv<const int &>, int>, POS);
 static_assert(is_same<unrefcv<int>, int>, POS);
 static_assert(is_same<unrefcv<int>, int>, POS);
-static_assert(is_same<unrefcv<const int*>, const int*>, POS);
-static_assert(is_same<unrefcv<int* const>, int*>, POS);
-static_assert(is_same<unrefcv<const int* const>, const int*>, POS);
+static_assert(is_same<unrefcv<const int *>, const int *>, POS);
+static_assert(is_same<unrefcv<int *const>, int *>, POS);
+static_assert(is_same<unrefcv<const int *const>, const int *>, POS);
 
 // add_lref
-static_assert(is_same<add_lref<int>, int&>, POS);
-static_assert(is_same<add_lref<int&>, int&>, POS);
-static_assert(is_same<add_lref<const int>, int const&>, POS);
-static_assert(is_same<add_lref<const int*>, int const*&>, POS);
+static_assert(is_same<add_lref<int>, int &>, POS);
+static_assert(is_same<add_lref<int &>, int &>, POS);
+static_assert(is_same<add_lref<const int>, int const &>, POS);
+static_assert(is_same<add_lref<const int *>, int const *&>, POS);
 
 // add_rref
-static_assert(is_same<add_rref<int>, int&&>, POS);
-static_assert(is_same<add_rref<int&>, int&>, POS); // (int&)&& = int&
-static_assert(is_same<add_rref<const int>, int const&&>, POS);
-static_assert(is_same<add_rref<const int*>, int const*&&>, POS);
+static_assert(is_same<add_rref<int>, int &&>, POS);
+static_assert(is_same<add_rref<int &>, int &>, POS); // (int&)&& = int&
+static_assert(is_same<add_rref<const int>, int const &&>, POS);
+static_assert(is_same<add_rref<const int *>, int const *&&>, POS);
 
 // add_const
 static_assert(is_same<add_const<int>, int const>, POS);
@@ -71,11 +73,11 @@ static_assert(is_same<add_volatile<int>, int volatile>, POS);
 static_assert(is_same<add_volatile<volatile int>, int volatile>, POS);
 
 // is_ref
-static_assert(is_ref<int&>, POS);
-static_assert(is_ref<int&&>, POS);
-static_assert(is_ref<const int&>, POS);
+static_assert(is_ref<int &>, POS);
+static_assert(is_ref<int &&>, POS);
+static_assert(is_ref<const int &>, POS);
 static_assert(!is_ref<int>, POS);
-static_assert(!is_ref<int*>, POS);
+static_assert(!is_ref<int *>, POS);
 
 // contained
 static_assert(contained<int, int, double>, POS);
@@ -183,7 +185,7 @@ void test_variant()
         variant<int, std::string> v1("xyz");
         get<int>(v1); // bad_get
         assert(false);
-    } catch (bad_get&) {
+    } catch (bad_get &) {
         assert(true);
     }
 }
@@ -192,7 +194,8 @@ void test_recursive_variant()
 {
     struct node;
     typedef variant<std::nullptr_t, int, recursive_wrapper<node>> node_data;
-    struct node {
+    struct node
+    {
         node_data left;
         node_data right;
     } t;
@@ -223,7 +226,8 @@ void test_move()
 void test_visitor()
 {
     typedef variant<int, double> vt;
-    struct visitor {
+    struct visitor
+    {
         std::string operator()(int x) && { return "int"; }
 
         std::string operator()(double x) && { return "double"; }
@@ -249,30 +253,32 @@ void test_print()
     }
 }
 
-struct iarchive {
-    iarchive(std::istream& is) : is_(is) {}
+struct iarchive
+{
+    iarchive(std::istream &is) : is_(is) { }
 
-    template <typename T>
-    typename std::enable_if<std::is_arithmetic<T>::value, iarchive&>::type operator>>(T& n)
+    template<typename T>
+    typename std::enable_if<std::is_arithmetic<T>::value, iarchive &>::type operator>>(T &n)
     {
-        is_.read((char*)(&n), sizeof(n));
+        is_.read((char *) (&n), sizeof(n));
         return *this;
     }
 
-    std::istream& is_;
+    std::istream &is_;
 };
 
-struct oarchive {
-    oarchive(std::ostream& os) : os_(os) {}
+struct oarchive
+{
+    oarchive(std::ostream &os) : os_(os) { }
 
-    template <typename T>
-    typename std::enable_if<std::is_arithmetic<T>::value, oarchive&>::type operator<<(const T& n)
+    template<typename T>
+    typename std::enable_if<std::is_arithmetic<T>::value, oarchive &>::type operator<<(const T &n)
     {
-        os_.write((const char*)(&n), sizeof(n));
+        os_.write((const char *) (&n), sizeof(n));
         return *this;
     }
 
-    std::ostream& os_;
+    std::ostream &os_;
 };
 
 void test_io()
@@ -292,7 +298,7 @@ void test_io()
 void test_filebuf()
 {
     int fd = open("/tmp/x", O_CREAT | O_RDWR, 0644);
-    stdio_filebuf<char>* fb = new stdio_filebuf<char>;
+    stdio_filebuf<char> *fb = new stdio_filebuf<char>;
     fb->open(fd, std::ios::in | std::ios::out);
     std::iostream s(fb);
     s << "abc" << std::endl;
@@ -303,132 +309,147 @@ void test_filebuf()
 void test_reflected()
 {
     S s{420, 4.2, "hello", {4200}};
-    // static_assert(S::cxl_reflected_metadata::element_count==4, "xx");
 
-    static_assert(cxutil::tuple_size<S>::value == 4, "xxx");
-    static_assert(std::is_same<double, cxutil::tuple_element<1, S>::type>::value, "xxx");
+    static_assert(cxl::tuple_size<S>::value == 4, POS);
+    static_assert(std::is_same<double, cxl::tuple_element<1, S>::type>::value, POS);
     static_assert(
-        std::is_same<const double, cxutil::reflection::reflected_element<1, const S>::type>::value,
-        POS);
-    static_assert(std::is_same<const double, cxutil::tuple_element<1, const S>::type>::value,
-                  "xxx");
+            std::is_same<const double, cxl::reflection::reflected_element<1, const S>::type>::value,
+            POS);
+    static_assert(std::is_same<const double, cxl::tuple_element<1, const S>::type>::value,
+                  POS);
 
-    static_assert(!std::is_const<cxutil::reflection::reflected_element_type<1, S>>::value, POS);
-    // Test cxutil::reflection::set
+    static_assert(!std::is_const<cxl::reflection::reflected_element_type<1, S>>::value, POS);
+    // Test cxl::reflection::set
     try {
         // This will succeed
-        cxutil::set("m1", s, 210);
+        cxl::set("m1", s, 210);
         // This will fail, incompatible type, double and string literal
-        cxutil::set(1, s, "210");
+        cxl::set(1, s, "210");
         assert(false);
-    } catch (cxutil::bad_get&) {
+    } catch (cxl::bad_get &) {
     }
     assert(s.m1 == 210);
 
     try {
         // This will fail, index out of range
-        cxutil::reflection::set(10, s, 55);
+        cxl::reflection::set(10, s, 55);
         assert(false);
-    } catch (std::out_of_range&) {
+    } catch (std::out_of_range &) {
     }
 
     try {
         // This will succeed
-        cxutil::set("MM3", s, std::string("world"));
+        cxl::set("MM3", s, std::string("world"));
         // This will fail, unknown key
-        cxutil::set("unknown key", s, 55);
+        cxl::set("unknown key", s, 55);
         assert(false);
-    } catch (std::out_of_range&) {
+    } catch (std::out_of_range &) {
     }
     assert(s.m3 == std::string("world"));
 
     // Custom attribute
-    assert(std::string(cxutil::get_element_sql_field<S>(0))=="m1"); // Fallback to name()
-    assert(std::string(cxutil::get_element_sql_field<S>(1))=="field2");
-    assert(std::string(cxutil::get_element_xml_namespace<S>(0)).empty());
-    assert(std::string(cxutil::get_element_xml_namespace<S>(1)) == "somens");
-    assert(std::string(cxutil::get_element_json_key<S>(2))=="MM3"); // Fallback to key()
-    assert(std::string(cxutil::get_element_xml_node<S>(3))=="m4");
+    assert(std::string(cxl::get_element_sql_field<S>(0)) == "m1"); // Fallback to name()
+    assert(std::string(cxl::get_element_sql_field<S>(1)) == "field2");
+    assert(std::string(cxl::get_element_xml_namespace<S>(0)).empty());
+    assert(std::string(cxl::get_element_xml_namespace<S>(1)) == "somens");
+    assert(std::string(cxl::get_element_json_key<S>(2)) == "MM3"); // Fallback to key()
+    assert(std::string(cxl::get_element_xml_node<S>(3)) == "m4");
 
     // Test std::get
     std::get<2>(s) = "hello, world";
     assert(s.m3 == std::string("hello, world"));
-    // Test cxutil::get
-    assert(cxutil::get<std::string>(2, s) == std::string("hello, world"));
+    // Test cxl::get
+    assert(cxl::get<std::string>(2, s) == std::string("hello, world"));
 
     // Access field names
     std::string names;
-    for(size_t i=0; i<cxutil::tuple_size<S>::value; i++) {
-        if(!names.empty()) names+=",";
-        names+=get_element_name<S>(i);
+    for (size_t i = 0; i < cxl::tuple_size<S>::value; i++) {
+        if (!names.empty()) names += ",";
+        names += get_element_name<S>(i);
     }
     assert(names == "m1,m2,m3,m4");
 
     // Toy SQL generator
     std::string keys;
-    for(size_t i=0; i<cxutil::tuple_size<S>::value; i++) {
-        if(!keys.empty()) keys+=", ";
-        keys+=get_element_sql_field<S>(i);
+    for (size_t i = 0; i < cxl::tuple_size<S>::value; i++) {
+        if (!keys.empty()) keys += ", ";
+        keys += get_element_sql_field<S>(i);
     }
-    keys = "SELECT " + keys + " FROM " + cxutil::get_sql_table<S>() + " WHERE "
-           + cxutil::get_element_sql_field<S>(0) + "=?";
+    keys = "SELECT " + keys + " FROM " + cxl::get_sql_table<S>() + " WHERE "
+           + cxl::get_element_sql_field<S>(0) + "=?";
     assert(keys == "SELECT m1, field2, MM3, m4 FROM some_table WHERE m1=?");
 
     // Test with std::tuple
     auto st = std::make_tuple(10, 5.4, 100, 200);
-    static_assert(std::is_same<cxutil::tuple_element<0, decltype(st)>::type, int>::value, POS);
-    assert(cxutil::get<int>(0, st) == 10);
+    static_assert(std::is_same<cxl::tuple_element<0, decltype(st)>::type, int>::value, POS);
+    assert(cxl::get<int>(0, st) == 10);
 
     // Test with std::pair
     auto p = std::make_pair("xyz", 74);
-    static_assert(std::is_same<cxutil::tuple_element<1, decltype(p)>::type, int>::value, POS);
-    assert(cxutil::get<int>(1, p) == 74);
-    assert(cxutil::get<int>("second", p) == 74);
-    assert(std::string(cxutil::get<const char*>("first", p)) == "xyz");
-    cxutil::set(1, p, 5);
+    static_assert(std::is_same<cxl::tuple_element<1, decltype(p)>::type, int>::value, POS);
+    assert(cxl::get<int>(1, p) == 74);
+    assert(cxl::get<int>("second", p) == 74);
+    assert(std::string(cxl::get<const char *>("first", p)) == "xyz");
+    cxl::set(1, p, 5);
     assert(std::get<1>(p) == 5);
-    assert(cxutil::get<int>("second", p) == 5);
+    assert(cxl::get<int>("second", p) == 5);
 
     // Test with std::pair with const member
     typedef std::pair<const int, int> cp_t;
-    typedef cxutil::to_variant_t<cp_t> vcp_t;
-    static_assert(std::is_same<cxutil::variant<int>, vcp_t>::value, POS);
+    typedef cxl::to_variant_t<cp_t> vcp_t;
+    static_assert(std::is_same<cxl::variant<int>, vcp_t>::value, POS);
     typedef std::pair<const int, int> cp_t;
     cp_t cp(42, 420);
-    assert(cxutil::get<int>(0, cp) == 42);
+    assert(cxl::get<int>(0, cp) == 42);
     try {
         // Should fail, cannot set a const field
-        cxutil::set(0, cp, 21);
+        cxl::set(0, cp, 21);
         assert(false);
-    } catch (std::bad_cast&) {
+    } catch (std::bad_cast &) {
     }
-    assert(cxutil::get<int>(1, cp) == 420);
-    cxutil::set(1, cp, 100);
-    static_assert(cxutil::reflectable<cp_t>, POS);
+    assert(cxl::get<int>(1, cp) == 420);
+    cxl::set(1, cp, 100);
+    static_assert(cxl::reflectable<cp_t>, POS);
     static_assert(
-        std::is_same<const int, cxutil::reflection::reflected_element<0, cp_t>::type>::value, POS);
+            std::is_same<const int, cxl::reflection::reflected_element<0, cp_t>::type>::value, POS);
     static_assert(std::is_same<const int, std::tuple_element<0, cp_t>::type>::value, POS);
-    assert(cxutil::get<int>(0, cp) == 42);
-    assert(cxutil::get<int>(1, cp) == 100);
+    assert(cxl::get<int>(0, cp) == 42);
+    assert(cxl::get<int>(1, cp) == 100);
     assert(std::get<1>(cp) == 100);
     std::get<1>(cp) = 1420;
     assert(std::get<1>(cp) == 1420);
 
     // struct with const field
     SC sc{10, 5.5, 84};
-    cxutil::set(0, sc, 42);
+    cxl::set(0, sc, 42);
     assert(sc.m1 == 42);
     try {
         // Should fail, cannot set a const field
-        cxutil::set(1, sc, 7.5);
+        cxl::set(1, sc, 7.5);
         assert(false);
-    } catch (std::bad_cast&) {
+    } catch (std::bad_cast &) {
     }
 
-    cxutil::set("m3", sc, 168);
-    assert(cxutil::get<int>(2, sc) == 168);
-    assert(cxutil::get<int>(3, sc) == 100);
+    cxl::set("m3", sc, 168);
+    assert(cxl::get<int>(2, sc) == 168);
+    assert(cxl::get<int>(3, sc) == 100);
     assert(std::get<3>(sc) == 100);
+}
+
+void test_csv() {
+    std::vector<SC> vsc;
+    vsc.push_back(SC{10, 5.5, 84});
+    vsc.push_back(SC{20, 15.5, 284});
+    vsc.push_back(SC{30, 25.5, 384});
+    vsc.push_back(SC{40, 35.5, 484});
+    std::stringstream ss;
+    std::ostream_iterator<char> oi(ss);
+    cxl::reflection::csv::write_csv(vsc.begin(), vsc.end(), oi);
+    assert(ss.str()=="\"m1\",\"m2\",\"m3\",\"m4\"\n"
+            "10,5.500000,84,100\n"
+            "20,15.500000,284,100\n"
+            "30,25.500000,384,100\n"
+            "40,35.500000,484,100\n");
 }
 
 int main()
@@ -441,5 +462,6 @@ int main()
     test_io();
     test_filebuf();
     test_reflected();
+    test_csv();
     return 0;
 }

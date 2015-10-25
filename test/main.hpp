@@ -3,40 +3,46 @@
 
 #include <string>
 #include <ostream>
-#include <cxutil/reflection.hpp>
+#include <cxl/reflection.hpp>
 
-struct S_inner {
+struct S_inner
+{
     int m1;
 };
 
-inline std::ostream& operator<<(std::ostream& os, const S_inner& s)
+inline std::ostream &operator<<(std::ostream &os, const S_inner &s)
 {
     os << "S_inner{" << s.m1 << "}";
     return os;
 }
 
-struct S {
+struct S
+{
     int m1;
     double m2;
     std::string m3;
     S_inner m4;
 };
 
-inline std::ostream& operator<<(std::ostream& os, const S& s)
+inline std::ostream &operator<<(std::ostream &os, const S &s)
 {
     os << "S{" << s.m1 << "," << s.m2 << ",\"" << s.m3 << "\"," << s.m4 << "}";
     return os;
 }
 
-struct SC {
+struct SC
+{
     int m1;
     const double m2;
 
-    SC(int mm1, double mm2, int mm3) : m1(mm1), m2(mm2), m3(mm3) {}
+    SC(int mm1, double mm2, int mm3) : m1(mm1), m2(mm2), m3(mm3) { }
+
     int get_m3() const { return m3; }
+
     void set_m3(int x) { m3 = x; }
 
     int get_m4() const { return 100; }
+
 private:
     int m3;
     // Metadata within the struct

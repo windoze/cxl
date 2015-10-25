@@ -30,20 +30,20 @@ tmpl=r"""///////////////////////////////////////////////////////////////////////
 #ifndef ${header_guard}
 #define ${header_guard}
 
-#include <cxutil/reflection/reflection_impl.hpp>
+#include <cxl/reflection/reflection_impl.hpp>
 
 % for c in classes:
 #ifndef ${c.header_guard()}
 #define ${c.header_guard()}
 
-namespace cxutil { namespace reflection {
+namespace cxl { namespace reflection {
 
 struct reflected_metadata {
 	static constexpr bool enabled=true;
 	typedef std::tuple<
 		${c.member_identifier_list(prefix="decltype(", postfix=")", sep=",\n\t\t")}
 	> tuple_type;
-	typedef cxutil::reflection::to_variant_t<tuple_type> variant_type;
+	typedef cxl::reflection::to_variant_t<tuple_type> variant_type;
 
 	static constexpr std::size_t attr_count=${len(c.members)};
 
@@ -65,7 +65,7 @@ struct reflected_metadata {
 	% endfor
 };
 
-}}	// End of namespace cxutil::reflection
+}}	// End of namespace cxl::reflection
 #endif	// !defined(${c.header_guard()})
 % endfor
 

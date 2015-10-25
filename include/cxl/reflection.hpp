@@ -1,7 +1,7 @@
-#ifndef CXUTIL_REFLECTION_HPP
-#define CXUTIL_REFLECTION_HPP
+#ifndef CXL_REFLECTION_HPP
+#define CXL_REFLECTION_HPP
 
-#include <cxutil/reflection/reflection_impl.hpp>
+#include <cxl/reflection/reflection_impl.hpp>
 
 #define CXL_PP_CONCAT9(a, b, c, d, e, f, g, h, i) a b c d e f g h i
 #define CXL_PP_CONCAT8(a, b, c, d, e, f, g, h) a b c d e f g h
@@ -33,7 +33,7 @@ public:                                                                         
 
 // Can be used out of struct, must be put in global namespace
 #define CXL_EXT_BEGIN_REFLECTED(TYPE, COUNT, ARGS...)                                              \
-    namespace cxutil                                                                               \
+    namespace cxl                                                                               \
     {                                                                                              \
     namespace reflection                                                                           \
     {                                                                                              \
@@ -52,9 +52,7 @@ public:                                                                         
     CXL_PP_CONCAT(ARGS);                                                                           \
     }                                                                                              \
     ;                                                                                              \
-    }                                                                                              \
-    }                                                                                              \
-    } /* End of namespace cxutl::reflection::metadata_store */
+    }}} /* End of namespace cxl::reflection::metadata_store */
 
 #define CXL_REFLECTED_MEMBER(INDEX, NAME, ARGS...)                                                 \
     template <typename Unused>                                                                     \
@@ -216,4 +214,4 @@ public:                                                                         
 
 #define CXL_CSV_FIELD(X) CXL_ATTR(csv_field, X)
 
-#endif // !defined(CXUTIL_REFLECTION_HPP)
+#endif // !defined(CXL_REFLECTION_HPP)

@@ -35,7 +35,7 @@ Some C++ utilities
     - `CXL_REFLECTED_RO_ATTRIBUTE` same as `CXL_REFLECTED_ATTRIBUTE`, but the member is readonly.
     - `CXL_REFLECTED_RO_ATTRIBUTE_KEY` same as `CXL_REFLECTED_ATTRIBUTE_KEY`, but the member is readonly.
 * After metadata are defined, reflection support is added to the type:
-    - `constexpr bool cxutil::reflectable<T>` is true if T supports reflection, all types with metadata defined are supports, also `std::tuple`, `std::pair`, and `std::array` are supported.
+    - `constexpr bool cxl::reflectable<T>` is true if T supports reflection, all types with metadata defined are supports, also `std::tuple`, `std::pair`, and `std::array` are supported.
     - `to_variant_t<T>` is the corresponding `variant` type, used to dynamically access all members in T.
     - `tuple_size<T>` same as `std::tuple_size<T>`, but also supports reflectable types.
     - `tuple_element<I, T>` same as `std::tuple_element<I, T>`, but also supports reflectable types.
