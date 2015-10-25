@@ -163,7 +163,7 @@ public:                                                                         
         typedef TYPE type;                                                                         \
         static constexpr char const* name() { return #NAME; }                                      \
         static constexpr char const* key() { return KEY; }                                         \
-        static constexpr type get(owner_type const& d) { return GETTER; }                          \
+        static type get(owner_type const& d) { return GETTER; }                          \
         template <typename V>                                                                      \
         static void set(owner_type& d, V&& v)                                                      \
         {                                                                                          \
@@ -180,7 +180,7 @@ public:                                                                         
         typedef typename std::add_const<TYPE>::type type;                                          \
         static constexpr char const* name() { return #NAME; }                                      \
         static constexpr char const* key() { return #NAME; }                                       \
-        static constexpr type get(owner_type const& d) { return GETTER; }                          \
+        static type get(owner_type const& d) { return GETTER; }                          \
         CXL_PP_CONCAT(ARGS);                                                                       \
     };
 
@@ -192,7 +192,7 @@ public:                                                                         
         typedef typename std::add_const<TYPE>::type type;                                          \
         static constexpr char const* name() { return #NAME; }                                      \
         static constexpr char const* key() { return KEY; }                                         \
-        static constexpr type get(owner_type const& d) { return GETTER; }                          \
+        static type get(owner_type const& d) { return GETTER; }                          \
         CXL_PP_CONCAT(ARGS);                                                                       \
     };
 

@@ -137,13 +137,13 @@ namespace cxl {
                     static constexpr char const *key() { return ""; }
 
                     template<typename Owner>
-                    static constexpr std::enable_if_t<!std::is_const<type>::value, type> &get(Owner &d)
+                    static std::enable_if_t<!std::is_const<type>::value, type> &get(Owner &d)
                     {
                         return std::get<I>(d);
                     }
 
                     template<typename Owner>
-                    static constexpr std::enable_if_t<!std::is_const<type>::value, type> &&
+                    static std::enable_if_t<!std::is_const<type>::value, type> &&
                     get(Owner &&d)
                     {
                         return std::get<I>(std::move(d));
@@ -155,7 +155,7 @@ namespace cxl {
                         std::get<I>(d) = std::forward<V>(v);
                     }
 
-                    static constexpr type const &get(owner_type const &d) { return std::get<I>(d); }
+                    static type const &get(owner_type const &d) { return std::get<I>(d); }
                 };
             };
 
@@ -184,7 +184,7 @@ namespace cxl {
                     static constexpr char const *key() { return "first"; }
 
                     template<typename Owner>
-                    static constexpr std::enable_if_t<!std::is_const<typename Owner::first_type>::value,
+                    static std::enable_if_t<!std::is_const<typename Owner::first_type>::value,
                                                       type> &
                     get(Owner &d)
                     {
@@ -192,7 +192,7 @@ namespace cxl {
                     }
 
                     template<typename Owner>
-                    static constexpr std::enable_if_t<!std::is_const<typename Owner::first_type>::value,
+                    static std::enable_if_t<!std::is_const<typename Owner::first_type>::value,
                                                       type> &&
                     get(Owner &&d)
                     {
@@ -206,7 +206,7 @@ namespace cxl {
                         d.first = std::forward<V>(v);
                     }
 
-                    static constexpr type const &get(owner_type const &d) { return d.first; }
+                    static type const &get(owner_type const &d) { return d.first; }
                 };
 
                 template<typename Unused>
@@ -221,7 +221,7 @@ namespace cxl {
                     static constexpr char const *key() { return "second"; }
 
                     template<typename Owner>
-                    static constexpr std::
+                    static std::
                     enable_if_t<!std::is_const<typename Owner::second_type>::value, type> &
                     get(Owner &d)
                     {
@@ -229,7 +229,7 @@ namespace cxl {
                     }
 
                     template<typename Owner>
-                    static constexpr std::
+                    static std::
                     enable_if_t<!std::is_const<typename Owner::second_type>::value, type> &&
                     get(Owner &&d)
                     {
@@ -243,7 +243,7 @@ namespace cxl {
                         d.second = std::forward<V>(v);
                     }
 
-                    static constexpr type const &get(owner_type const &d) { return d.second; }
+                    static type const &get(owner_type const &d) { return d.second; }
                 };
             };
 
@@ -269,7 +269,7 @@ namespace cxl {
                     static constexpr char const *key() { return ""; }
 
                     template<typename Owner>
-                    static constexpr std::enable_if_t<!std::is_const<typename Owner::value_type>::value,
+                    static std::enable_if_t<!std::is_const<typename Owner::value_type>::value,
                                                       type> &
                     get(owner_type &d)
                     {
@@ -277,7 +277,7 @@ namespace cxl {
                     }
 
                     template<typename Owner>
-                    static constexpr std::enable_if_t<!std::is_const<typename Owner::value_type>::value,
+                    static std::enable_if_t<!std::is_const<typename Owner::value_type>::value,
                                                       type> &&
                     get(owner_type &&d)
                     {
@@ -290,7 +290,7 @@ namespace cxl {
                         std::get<I>(d) = std::forward<V>(v);
                     }
 
-                    static constexpr type const &get(owner_type const &d) { return std::get<I>(d); }
+                    static type const &get(owner_type const &d) { return std::get<I>(d); }
                 };
             };
         };
