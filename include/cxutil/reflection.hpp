@@ -214,4 +214,6 @@ public:                                                                         
 
 #define CXL_SQL_FIELD(X) CXL_ATTR(sql_field, X)
 
+#define CXL_CSV_FIELD(X) CXL_ATTR(csv_field, X)
+
 #endif // !defined(CXUTIL_REFLECTION_HPP)

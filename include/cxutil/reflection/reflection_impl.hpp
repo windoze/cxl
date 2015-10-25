@@ -664,6 +664,8 @@ namespace reflection
         CXL_ELEM_OP_IMPL(xml_node, (reflected_element<I, T>::key()))
         // xml_namespace() fallbacks to ""
         CXL_ELEM_OP_IMPL(xml_namespace, "")
+        // csv_field() fallbacks to key()
+        CXL_ELEM_OP_IMPL(csv_field, (reflected_element<I, T>::key()))
     }
 
     template <typename T>
@@ -739,6 +741,7 @@ namespace reflection
     CXL_ELEM_OP_FUNC(json_key)
     CXL_ELEM_OP_FUNC(xml_node)
     CXL_ELEM_OP_FUNC(xml_namespace)
+    CXL_ELEM_OP_FUNC(csv_field)
 } // End of namespace cxutil::reflection
 using reflection::reflectable;
 using reflection::to_variant_t;
@@ -757,6 +760,7 @@ using reflection::get_element_sql_field;
 using reflection::get_element_json_key;
 using reflection::get_element_xml_node;
 using reflection::get_element_xml_namespace;
+using reflection::get_element_csv_field;
 } // End of namespace cxutil
 
 namespace std
